@@ -1,0 +1,52 @@
+.explore-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.explore-screen h2 {
+  margin: 0;
+}
+
+.explore-screen__hint {
+  color: #9aa7c4;
+  margin: 0;
+}
+
+.explore-screen__status {
+  color: #9aa7c4;
+}
+
+.explore-screen ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.explore-screen__topic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.explore-screen__hashtag {
+  margin: 0;
+  font-weight: 600;
+}
+
+.explore-screen__description {
+  margin: 4px 0 0 0;
+  color: #aab5cf;
+}
+
+.explore-screen__posts {
+  color: #ffc371;
+  font-weight: 600;
+}

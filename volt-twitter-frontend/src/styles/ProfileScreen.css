@@ -1,0 +1,58 @@
+.profile-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-screen__hero {
+  display: flex;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile-screen__hero img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+}
+
+.profile-screen__hero h2 {
+  margin: 0;
+}
+
+.profile-screen__bio {
+  margin: 8px 0 4px 0;
+  color: #cdd5f0;
+}
+
+.profile-screen__location {
+  margin: 0;
+  color: #ffc371;
+}
+
+.profile-screen__stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  color: #9aa7c4;
+}
+
+.profile-screen__stats strong {
+  display: block;
+  color: #f5f6fa;
+}
+
+.profile-screen__pinned,
+.profile-screen__timeline {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.profile-screen__pinned h3,
+.profile-screen__timeline h3 {
+  margin-top: 0;
+}

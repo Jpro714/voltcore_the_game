@@ -1,0 +1,33 @@
+.feed-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feed-screen__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.feed-screen__header h2 {
+  margin: 0;
+}
+
+.feed-screen__header button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #f5f6fa;
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+.feed-screen__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-screen__status {
+  color: #9aa7c4;
+}

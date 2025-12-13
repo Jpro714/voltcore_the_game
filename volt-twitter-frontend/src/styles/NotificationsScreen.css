@@ -1,0 +1,44 @@
+.notifications-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notifications-screen__status {
+  color: #9aa7c4;
+}
+
+.notifications-screen ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notifications-screen__item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.notifications-screen__item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.notifications-screen__message {
+  margin: 0;
+  font-weight: 500;
+}
+
+.notifications-screen__timestamp {
+  color: #9aa7c4;
+  font-size: 0.85rem;
+}
