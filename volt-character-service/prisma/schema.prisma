@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Character {
+  id                String                @id @default(uuid())
+  handle            String                @unique
+  displayName       String
+  twitterUserId     String
+  twitterHandle     String
+  persona           Json
+  cadenceMinutes    Int?
+  isActive          Boolean               @default(true)
+  state             CharacterState?
+  activations       CharacterActivation[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model CharacterState {
+  id               String    @id @default(uuid())
+  characterId      String    @unique
+  currentSituation String?
+  workingMemory    String?
+  lastActivationAt DateTime?
+  nextActivationAt DateTime?
+  notes            String?
+  character        Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+}
+
+model CharacterActivation {
+  id           String    @id @default(uuid())
+  characterId  String
+  occurredAt   DateTime  @default(now())
+  inputContext Json?
+  actions      Json?
+  summary      String?
+  character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, occurredAt])
+}

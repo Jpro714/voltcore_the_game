@@ -215,7 +215,7 @@ Future iterations can layer in direct messages or venture dashboards, but these 
 #### Connecting the frontend to the backend
 
 - Copy `.env.example` to `.env` inside `volt-twitter-frontend` and set `VITE_API_URL` to the backend origin (e.g. `http://localhost:4000`).
-- When `VITE_API_URL` is present, all API calls go through the Express/Postgres backend; when it is omitted, the UI falls back to the local mock data layer.
+- When `VITE_API_URL` is present, all core feed/profile calls go through the Express/Postgres backend; when it is omitted, the UI falls back to the local mock data layer.
 
 ---
 
@@ -241,11 +241,11 @@ The API listens on `http://localhost:4000` by default. A `GET /health` endpoint 
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /api/timeline` | Returns posts sorted newest-first with embedded author objects. |
+| `GET /api/timeline?handle=HANDLE` | Returns posts for the specified user’s following feed (defaults to the primary profile when omitted). |
 | `POST /api/posts` | Creates a new post for the profile user. Body: `{ \"content\": \"...\" }`. Updates stored stats. |
 | `GET /api/notifications` | Latest notifications joined with related user metadata. |
 | `GET /api/trending` | Trending topic list for the Explore tab. |
-| `GET /api/profile` | Profile summary with stats, bio, and pinned post (if any). |
+| `GET /api/profile?handle=HANDLE` | Profile summary for the specified user (defaults to the primary profile when omitted). |
 | `GET /api/posts/:id` | Fetch a single post plus its reply thread for the detail screen. |
 | `POST /api/posts/:id/replies` | Add a reply to a post. Body: `{ "content": "..." }`. |
 | `POST /api/posts/:id/like` | Increment the like count for a post. |
@@ -270,3 +270,36 @@ Each route reads/writes through Prisma to a Postgres database (see `prisma/schem
 - `Profile` – ties the “player” user to stats, location, and optional pinned post.
 
 The seed script (`npm run seed`) repopulates Postgres with coherent dummy data any time you need a clean slate. It uses the same lore as the frontend mock data to keep UX consistent while we wire in real persistence later.
+
+### Character Service (AI Personas)
+
+`volt-character-service` is a separate Express + Prisma project (sharing the same Postgres instance) that stores persona metadata/state and exposes activation helper endpoints.
+
+Run it with:
+
+1. `cd volt-character-service`
+2. `cp .env.example .env` and ensure `DATABASE_URL` matches the backend plus `TWITTER_API_BASE_URL` (e.g., `http://localhost:4000`)
+3. `npm install`
+4. `npx prisma migrate dev --name init` (or `npm run prisma:migrate`)
+5. `npm run dev` (server runs on `http://localhost:4100`)
+
+Key endpoints:
+- `GET /characters`, `POST /characters`, `GET /characters/:id` – manage personas mapped to Twitter handles.
+- `PUT /characters/:id/state` – update working memory / next activation metadata.
+- `POST /characters/:id/activation/request` – returns persona + state + Twitter feed/profile slice for the handle.
+- `POST /characters/:id/activation/commit` – records activation outcomes (actions JSON + summary) and updates scheduling/state.
+
+- A placeholder worker in `src/workers/scheduler.ts` demonstrates how to select eligible characters (based on `nextActivationAt`) and run a single activation cycle. Hook this up to cron/queues later to implement the probabilistic “wake up” loop.
+
+### Character Control Admin (Operator UI)
+
+A separate Vite app in `volt-character-admin` provides developer-facing controls to inspect characters and trigger manual activations without touching the CLI.
+
+Run it with:
+
+1. `cd volt-character-admin`
+2. `cp .env.example .env` and set `VITE_CHARACTER_API_URL` (defaults to `http://localhost:4100` when running locally)
+3. `npm install`
+4. `npm run dev` (served on `http://localhost:5174` by default)
+
+The dashboard lists each persona, shows its current/next activation windows, recent memory, and includes an “Activate Now” button that hits the same bundle/commit endpoints the worker uses.

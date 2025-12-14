@@ -28,9 +28,10 @@ const PORT = Number(process.env.PORT) || 4000;
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/timeline', async (_req, res) => {
+app.get('/api/timeline', async (req, res) => {
   try {
-    const timeline = await getTimeline();
+    const handle = typeof req.query.handle === 'string' ? req.query.handle : undefined;
+    const timeline = await getTimeline(handle);
     res.json(timeline);
   } catch (error) {
     res.status(500).json({ message: 'Failed to load timeline', error: (error as Error).message });
@@ -55,9 +56,10 @@ app.get('/api/trending', async (_req, res) => {
   }
 });
 
-app.get('/api/profile', async (_req, res) => {
+app.get('/api/profile', async (req, res) => {
   try {
-    const profile = await getProfile();
+    const handle = typeof req.query.handle === 'string' ? req.query.handle : undefined;
+    const profile = await getProfile(handle);
     res.json(profile);
   } catch (error) {
     res.status(500).json({ message: 'Failed to load profile', error: (error as Error).message });

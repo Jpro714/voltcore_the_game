@@ -84,13 +84,13 @@ const mapProfile = (profile: ProfileWithRelations): ProfileResponse => {
   };
 };
 
-export const getTimeline = async (): Promise<PostResponse[]> => {
-  const profile = await requireProfile();
+export const getTimeline = async (handle?: string): Promise<PostResponse[]> => {
+  const { userId } = await resolveUserContext(handle);
   const following = await prisma.follow.findMany({
-    where: { followerId: profile.userId },
+    where: { followerId: userId },
     select: { followingId: true },
   });
-  const authorIds = new Set<string>([profile.userId]);
+  const authorIds = new Set<string>([userId]);
   following.forEach((entry) => authorIds.add(entry.followingId));
 
   const posts = await prisma.post.findMany({
@@ -135,8 +135,9 @@ export const getTrendingTopics = async (): Promise<TrendTopic[]> => {
   }));
 };
 
-export const getProfile = async (): Promise<ProfileResponse> => {
+export const getProfile = async (handle?: string): Promise<ProfileResponse> => {
   const profile = await prisma.profile.findFirst({
+    where: handle ? { user: { handle } } : undefined,
     include: {
       user: {
         include: {
@@ -213,6 +214,19 @@ export const requireProfile = async () => {
     throw new Error('Profile record not found');
   }
   return profile;
+};
+
+const resolveUserContext = async (handle?: string) => {
+  if (handle) {
+    const user = await prisma.user.findUnique({ where: { handle } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return { userId: user.id };
+  }
+
+  const profile = await requireProfile();
+  return { userId: profile.userId };
 };
 
 export const createPost = async (content: string): Promise<PostResponse> => {
