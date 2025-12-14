@@ -10,9 +10,18 @@ interface Props {
   onBack: () => void;
   onSelectTweet: (tweet: Tweet) => void;
   onSelectProfile: (user: User) => void;
+  onViewFollowers: () => void;
+  onViewFollowing: () => void;
 }
 
-const AuthorProfileScreen: React.FC<Props> = ({ handle, onBack, onSelectTweet, onSelectProfile }) => {
+const AuthorProfileScreen: React.FC<Props> = ({
+  handle,
+  onBack,
+  onSelectTweet,
+  onSelectProfile,
+  onViewFollowers,
+  onViewFollowing,
+}) => {
   const { likeTweet, refresh } = useFeed();
   const [profile, setProfile] = useState<AuthorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,13 +130,21 @@ const AuthorProfileScreen: React.FC<Props> = ({ handle, onBack, onSelectTweet, o
           {profile.bio && <p className="author-profile__bio">{profile.bio}</p>}
           {profile.location && <p className="author-profile__location">📍 {profile.location}</p>}
           <div className="author-profile__stats">
-            <span>
+            <button
+              type="button"
+              className="author-profile__stat"
+              onClick={onViewFollowers}
+            >
               <strong>{profile.stats.followers.toLocaleString()}</strong> Followers
-            </span>
-            <span>
+            </button>
+            <button
+              type="button"
+              className="author-profile__stat"
+              onClick={onViewFollowing}
+            >
               <strong>{profile.stats.following.toLocaleString()}</strong> Following
-            </span>
-            <span>
+            </button>
+            <span className="author-profile__stat author-profile__stat--static">
               <strong>{profile.stats.posts.toLocaleString()}</strong> Posts
             </span>
           </div>

@@ -1,0 +1,76 @@
+.relationship-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.relationship-list__back {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f5f6fa;
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+.relationship-list__header h2 {
+  margin: 0;
+}
+
+.relationship-list__header p {
+  margin: 4px 0 0 0;
+  color: #9aa7c4;
+}
+
+.relationship-list__status {
+  color: #9aa7c4;
+}
+
+.relationship-list__status--error {
+  color: #ff6b6b;
+}
+
+.relationship-list__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relationship-list__items li button {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.relationship-list__items li button img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.relationship-list__name {
+  font-weight: 600;
+  display: block;
+}
+
+.relationship-list__handle {
+  color: #9aa7c4;
+  display: block;
+}
+
+.relationship-list__tagline {
+  color: #cdd5f0;
+  display: block;
+  font-size: 0.85rem;
+}

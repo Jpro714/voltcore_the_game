@@ -76,6 +76,14 @@ const journalist: User = withSocialStats({
 
 const mockUsers: User[] = [playerUser, voltcoreSpokes, rumorBroker, chemist, journalist];
 
+const findUserByHandle = (handle: string) => mockUsers.find((candidate) => candidate.handle === handle);
+const findUserById = (id: string) => mockUsers.find((candidate) => candidate.id === id);
+const snapshotUser = (user: User) => ({
+  ...user,
+  followers: followerCount(user.id),
+  following: followingCount(user.id),
+});
+
 export const mockTimeline: Tweet[] = [
   {
     id: 'tw-1',
@@ -216,8 +224,8 @@ export const mockTrendingTopics: TrendTopic[] = [
 
 const playerPinnedTimelineTweet = mockTimeline.find((tweet) => tweet.id === 'tw-5');
 
-export const mockProfile: ProfileSummary = {
-  user: playerUser,
+export const buildMockProfile = (): ProfileSummary => ({
+  user: snapshotUser(playerUser),
   bio: playerUser.bio ?? 'Prototype handler for Voltcore experiments. Documenting everything.',
   location: playerUser.location ?? 'Neon District',
   stats: {
@@ -231,7 +239,7 @@ export const mockProfile: ProfileSummary = {
         isPinned: true,
       }
     : undefined,
-};
+});
 
 const findTimelineTweet = (id: string) => mockTimeline.find((tweet) => tweet.id === id);
 
@@ -279,30 +287,31 @@ export const recordMockReply = (parentId: string, reply: Tweet) => {
 };
 
 export const getMockAuthorProfile = (handle: string): AuthorProfile | undefined => {
-  const user = mockUsers.find((candidate) => candidate.handle === handle);
-  if (!user) {
+  const baseUser = findUserByHandle(handle);
+  if (!baseUser) {
     return undefined;
   }
 
-  const posts = getPostsByUser(user.id);
+  const posts = getPostsByUser(baseUser.id);
+  const user = snapshotUser(baseUser);
 
   return {
     user,
-    bio: user.bio,
-    location: user.location,
+    bio: baseUser.bio,
+    location: baseUser.location,
     stats: {
-      followers: followerCount(user.id),
-      following: followingCount(user.id),
+      followers: followerCount(baseUser.id),
+      following: followingCount(baseUser.id),
       posts: posts.length,
     },
     posts,
-    viewerIsFollowing: isFollowing(playerUser.id, user.id),
-    isViewer: user.id === playerUser.id,
+    viewerIsFollowing: isFollowing(playerUser.id, baseUser.id),
+    isViewer: baseUser.id === playerUser.id,
   };
 };
 
 const updateMockFollow = (handle: string, action: 'follow' | 'unfollow'): AuthorProfile | undefined => {
-  const user = mockUsers.find((candidate) => candidate.handle === handle);
+  const user = findUserByHandle(handle);
   if (!user || user.id === playerUser.id) {
     return getMockAuthorProfile(handle);
   }
@@ -326,3 +335,28 @@ const updateMockFollow = (handle: string, action: 'follow' | 'unfollow'): Author
 export const followMockAuthor = (handle: string) => updateMockFollow(handle, 'follow');
 
 export const unfollowMockAuthor = (handle: string) => updateMockFollow(handle, 'unfollow');
+
+const buildRelationshipList = (ids: string[]): User[] =>
+  ids
+    .map((id) => findUserById(id))
+    .filter((user): user is User => Boolean(user))
+    .map((user) => snapshotUser(user))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+export const getMockFollowers = (handle: string): User[] | undefined => {
+  const target = findUserByHandle(handle);
+  if (!target) {
+    return undefined;
+  }
+  const followerIds = mockFollowPairs.filter((pair) => pair.followingId === target.id).map((pair) => pair.followerId);
+  return buildRelationshipList(followerIds);
+};
+
+export const getMockFollowing = (handle: string): User[] | undefined => {
+  const target = findUserByHandle(handle);
+  if (!target) {
+    return undefined;
+  }
+  const followingIds = mockFollowPairs.filter((pair) => pair.followerId === target.id).map((pair) => pair.followingId);
+  return buildRelationshipList(followingIds);
+};

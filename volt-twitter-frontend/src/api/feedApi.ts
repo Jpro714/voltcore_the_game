@@ -1,10 +1,12 @@
 import { apiRequest, isApiEnabled } from './config';
 import {
+  buildMockProfile,
   followMockAuthor,
   getMockAuthorProfile,
+  getMockFollowers,
+  getMockFollowing,
   getMockTweetWithThread,
   mockNotifications,
-  mockProfile,
   mockTimeline,
   mockTrendingTopics,
   playerUser,
@@ -12,7 +14,7 @@ import {
   recordMockReply,
   unfollowMockAuthor,
 } from '../data/mockFeed';
-import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
+import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet, User } from '../types/feed';
 
 const clone = <T>(input: T): T => JSON.parse(JSON.stringify(input));
 
@@ -40,7 +42,7 @@ export const fetchTrendingTopics = () =>
   fallbackFetch<TrendTopic[]>(() => apiRequest<TrendTopic[]>('/api/trending'), mockTrendingTopics, 200);
 
 export const fetchProfileSummary = () =>
-  fallbackFetch<ProfileSummary>(() => apiRequest<ProfileSummary>('/api/profile'), mockProfile, 200);
+  fallbackFetch<ProfileSummary>(() => apiRequest<ProfileSummary>('/api/profile'), buildMockProfile(), 200);
 
 export const createPost = async (content: string) => {
   const trimmed = content.trim();
@@ -162,4 +164,28 @@ export const unfollowAuthor = async (handle: string) => {
     throw new Error('User not found.');
   }
   return fromMock(updated, 150);
+};
+
+export const fetchFollowersList = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<User[]>(`/api/users/${encodeURIComponent(handle)}/followers`);
+  }
+
+  const fallback = getMockFollowers(handle);
+  if (!fallback) {
+    throw new Error('User not found.');
+  }
+  return fromMock(fallback, 150);
+};
+
+export const fetchFollowingList = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<User[]>(`/api/users/${encodeURIComponent(handle)}/following`);
+  }
+
+  const fallback = getMockFollowing(handle);
+  if (!fallback) {
+    throw new Error('User not found.');
+  }
+  return fromMock(fallback, 150);
 };

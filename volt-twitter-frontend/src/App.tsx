@@ -5,6 +5,7 @@ import NotificationsScreen from './screens/NotificationsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import TweetDetailScreen from './screens/TweetDetailScreen';
 import AuthorProfileScreen from './screens/AuthorProfileScreen';
+import RelationshipListScreen from './screens/RelationshipListScreen';
 import { FeedProvider } from './context/FeedContext';
 import { Tweet, User } from './types/feed';
 import './styles/App.css';
@@ -21,7 +22,8 @@ type ScreenKey = NavScreenKey | 'detail';
 
 type DetailEntry =
   | { type: 'tweet'; tweet: Tweet }
-  | { type: 'profile'; handle: string };
+  | { type: 'profile'; handle: string }
+  | { type: 'relationship'; handle: string; relation: 'followers' | 'following' };
 
 function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenKey>('feed');
@@ -43,6 +45,11 @@ function App() {
 
   const openAuthorProfile = (user: User) => {
     setDetailStack((prev) => [...prev, { type: 'profile', handle: user.handle }]);
+    setActiveScreen('detail');
+  };
+
+  const openRelationshipList = (handle: string, relation: 'followers' | 'following') => {
+    setDetailStack((prev) => [...prev, { type: 'relationship', handle, relation }]);
     setActiveScreen('detail');
   };
 
@@ -70,11 +77,24 @@ function App() {
         );
       }
 
+      if (currentDetail.type === 'profile') {
+        return (
+          <AuthorProfileScreen
+            handle={currentDetail.handle}
+            onBack={handleBackFromDetail}
+            onSelectTweet={openTweetDetail}
+            onSelectProfile={openAuthorProfile}
+            onViewFollowers={() => openRelationshipList(currentDetail.handle, 'followers')}
+            onViewFollowing={() => openRelationshipList(currentDetail.handle, 'following')}
+          />
+        );
+      }
+
       return (
-        <AuthorProfileScreen
+        <RelationshipListScreen
           handle={currentDetail.handle}
+          type={currentDetail.relation}
           onBack={handleBackFromDetail}
-          onSelectTweet={openTweetDetail}
           onSelectProfile={openAuthorProfile}
         />
       );

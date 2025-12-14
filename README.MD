@@ -251,6 +251,8 @@ The API listens on `http://localhost:4000` by default. A `GET /health` endpoint 
 | `GET /api/users/:handle` | Public profile endpoint for any handle with bio/location/stats and chronological posts. |
 | `POST /api/users/:handle/follow` | Follow the target user as the local player account and return the refreshed author profile. |
 | `DELETE /api/users/:handle/follow` | Unfollow the target user and return the author profile with updated counts. |
+| `GET /api/users/:handle/followers` | List the followers for the specified user (each entry includes avatar/handle data). |
+| `GET /api/users/:handle/following` | List the accounts the specified user is following. |
 
 Each route reads/writes through Prisma to a Postgres database (see `prisma/schema.prisma`). The ORM keeps relationships aligned with the data contracts the frontend already consumes.
 

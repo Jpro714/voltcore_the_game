@@ -6,6 +6,8 @@ import {
   createReply,
   followUser,
   getAuthorProfile,
+  getFollowersForUser,
+  getFollowingForUser,
   getNotifications,
   getPostById,
   getProfile,
@@ -127,6 +129,24 @@ app.delete('/api/users/:handle/follow', async (req, res) => {
     res.json(profile);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.get('/api/users/:handle/followers', async (req, res) => {
+  try {
+    const followers = await getFollowersForUser(req.params.handle);
+    res.json(followers);
+  } catch (error) {
+    res.status(404).json({ message: (error as Error).message });
+  }
+});
+
+app.get('/api/users/:handle/following', async (req, res) => {
+  try {
+    const following = await getFollowingForUser(req.params.handle);
+    res.json(following);
+  } catch (error) {
+    res.status(404).json({ message: (error as Error).message });
   }
 });
 

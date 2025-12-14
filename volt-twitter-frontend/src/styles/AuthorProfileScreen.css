@@ -84,6 +84,28 @@
   display: flex;
   gap: 16px;
   margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.author-profile__stat {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.author-profile__stat--static {
+  cursor: default;
+}
+
+.author-profile__stat:focus-visible {
+  outline: 2px solid #ffc371;
+  border-radius: 6px;
 }
 
 .author-profile__timeline {

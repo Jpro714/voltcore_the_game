@@ -334,3 +334,47 @@ export const unfollowUser = async (identifier: string): Promise<AuthorProfileRes
 
   return getAuthorProfile(target.handle);
 };
+
+const findUserOrThrow = async (identifier: string) => {
+  const user = await findUserByIdentifier(identifier);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user;
+};
+
+const includeUserCounts = {
+  _count: {
+    select: { followers: true, following: true },
+  },
+};
+
+export const getFollowersForUser = async (identifier: string): Promise<User[]> => {
+  const target = await findUserOrThrow(identifier);
+  const followers = await prisma.user.findMany({
+    where: {
+      following: {
+        some: { followingId: target.id },
+      },
+    },
+    include: includeUserCounts,
+    orderBy: { displayName: 'asc' },
+  });
+
+  return followers.map((user) => mapUser(user as UserWithCounts));
+};
+
+export const getFollowingForUser = async (identifier: string): Promise<User[]> => {
+  const target = await findUserOrThrow(identifier);
+  const following = await prisma.user.findMany({
+    where: {
+      followers: {
+        some: { followerId: target.id },
+      },
+    },
+    include: includeUserCounts,
+    orderBy: { displayName: 'asc' },
+  });
+
+  return following.map((user) => mapUser(user as UserWithCounts));
+};
