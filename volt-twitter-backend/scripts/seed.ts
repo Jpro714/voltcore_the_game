@@ -178,6 +178,38 @@ const notifications = [
   },
 ];
 
+const directMessages = [
+  {
+    id: 'dm-1',
+    senderId: 'rumor',
+    recipientId: 'player',
+    content: 'You still sitting on that Lucid leak? My buyers are impatient.',
+    createdAt: minutesAgo(55),
+  },
+  {
+    id: 'dm-2',
+    senderId: 'player',
+    recipientId: 'rumor',
+    content: 'Need a better offer before I burn a corporate bridge.',
+    createdAt: minutesAgo(50),
+    readAt: minutesAgo(49),
+  },
+  {
+    id: 'dm-3',
+    senderId: 'chemist',
+    recipientId: 'player',
+    content: 'Got a spare vial of Lucid v14. Want to trade field notes?',
+    createdAt: minutesAgo(25),
+  },
+  {
+    id: 'dm-4',
+    senderId: 'player',
+    recipientId: 'chemist',
+    content: 'Only if you promise it won’t melt my brain on stream.',
+    createdAt: minutesAgo(23),
+  },
+];
+
 const trendingTopics = [
   {
     id: 'trend-1',
@@ -200,6 +232,7 @@ const trendingTopics = [
 ];
 
 const seed = async () => {
+  await prisma.directMessage.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.trendingTopic.deleteMany();
   await prisma.profile.deleteMany();
@@ -212,6 +245,7 @@ const seed = async () => {
   await prisma.notification.createMany({ data: notifications });
   await prisma.trendingTopic.createMany({ data: trendingTopics });
   await prisma.follow.createMany({ data: followPairs });
+  await prisma.directMessage.createMany({ data: directMessages });
 
   await prisma.profile.create({
     data: {

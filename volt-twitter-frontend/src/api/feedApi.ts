@@ -3,6 +3,8 @@ import {
   buildMockProfile,
   followMockAuthor,
   getMockAuthorProfile,
+  getMockConversation,
+  getMockConversations,
   getMockFollowers,
   getMockFollowing,
   getMockFollowingTimeline,
@@ -13,9 +15,20 @@ import {
   playerUser,
   recordMockLike,
   recordMockReply,
+  sendMockDirectMessage,
   unfollowMockAuthor,
 } from '../data/mockFeed';
-import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet, User } from '../types/feed';
+import {
+  AuthorProfile,
+  ConversationSummary,
+  ConversationThread,
+  DirectMessage,
+  NotificationItem,
+  ProfileSummary,
+  TrendTopic,
+  Tweet,
+  User,
+} from '../types/feed';
 
 const clone = <T>(input: T): T => JSON.parse(JSON.stringify(input));
 
@@ -165,6 +178,45 @@ export const unfollowAuthor = async (handle: string) => {
     throw new Error('User not found.');
   }
   return fromMock(updated, 150);
+};
+
+export const fetchConversations = () =>
+  fallbackFetch<ConversationSummary[]>(
+    () => apiRequest<ConversationSummary[]>('/api/direct-messages/conversations'),
+    getMockConversations(),
+    200,
+  );
+
+export const fetchConversation = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<ConversationThread>(`/api/direct-messages/conversations/${encodeURIComponent(handle)}`);
+  }
+
+  const fallback = getMockConversation(handle);
+  if (!fallback) {
+    throw new Error('Conversation not found.');
+  }
+  return fromMock(fallback, 200);
+};
+
+export const sendDirectMessage = async (handle: string, content: string) => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('Message must contain text.');
+  }
+
+  if (isApiEnabled) {
+    return apiRequest<DirectMessage>(`/api/direct-messages/conversations/${encodeURIComponent(handle)}`, {
+      method: 'POST',
+      body: JSON.stringify({ content: trimmed }),
+    });
+  }
+
+  const message = sendMockDirectMessage(handle, trimmed);
+  if (!message) {
+    throw new Error('Conversation not found.');
+  }
+  return fromMock(message, 150);
 };
 
 export const fetchFollowersList = async (handle: string) => {

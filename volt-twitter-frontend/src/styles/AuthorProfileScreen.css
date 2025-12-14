@@ -44,6 +44,21 @@
   gap: 12px;
 }
 
+.author-profile__identity h2 {
+  margin: 0;
+}
+
+.author-profile__identity p {
+  margin: 4px 0 0 0;
+  color: #9aa7c4;
+}
+
+.author-profile__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .author-profile__follow-btn {
   background: #1d9bf0;
   border: none;
@@ -63,6 +78,16 @@
 .author-profile__follow-btn:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.author-profile__message-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #f5f6fa;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .author-profile__tagline {

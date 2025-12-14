@@ -12,6 +12,7 @@ interface Props {
   onSelectProfile: (user: User) => void;
   onViewFollowers: () => void;
   onViewFollowing: () => void;
+  onStartConversation: (handle: string) => void;
 }
 
 const AuthorProfileScreen: React.FC<Props> = ({
@@ -21,6 +22,7 @@ const AuthorProfileScreen: React.FC<Props> = ({
   onSelectProfile,
   onViewFollowers,
   onViewFollowing,
+  onStartConversation,
 }) => {
   const { likeTweet, refresh } = useFeed();
   const [profile, setProfile] = useState<AuthorProfile | null>(null);
@@ -106,24 +108,33 @@ const AuthorProfileScreen: React.FC<Props> = ({
         <img src={profile.user.avatar} alt={profile.user.displayName} />
         <div className="author-profile__details">
           <div className="author-profile__header-row">
-            <div>
+            <div className="author-profile__identity">
               <h2>{profile.user.displayName}</h2>
               <p>@{profile.user.handle}</p>
             </div>
             {!profile.isViewer && (
-              <button
-                type="button"
-                className={
-                  profile.viewerIsFollowing
-                    ? 'author-profile__follow-btn author-profile__follow-btn--active'
-                    : 'author-profile__follow-btn'
-                }
-                onClick={handleFollowToggle}
-                disabled={isFollowMutating}
-                aria-pressed={profile.viewerIsFollowing}
-              >
-                {profile.viewerIsFollowing ? 'Following' : 'Follow'}
-              </button>
+              <div className="author-profile__actions">
+                <button
+                  type="button"
+                  className={
+                    profile.viewerIsFollowing
+                      ? 'author-profile__follow-btn author-profile__follow-btn--active'
+                      : 'author-profile__follow-btn'
+                  }
+                  onClick={handleFollowToggle}
+                  disabled={isFollowMutating}
+                  aria-pressed={profile.viewerIsFollowing}
+                >
+                  {profile.viewerIsFollowing ? 'Following' : 'Follow'}
+                </button>
+                <button
+                  type="button"
+                  className="author-profile__message-btn"
+                  onClick={() => onStartConversation(profile.user.handle)}
+                >
+                  Message
+                </button>
+              </div>
             )}
           </div>
           {profile.user.tagline && <p className="author-profile__tagline">{profile.user.tagline}</p>}

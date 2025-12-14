@@ -207,7 +207,7 @@ export const getAuthorProfile = async (identifier: string): Promise<AuthorProfil
   };
 };
 
-const requireProfile = async () => {
+export const requireProfile = async () => {
   const profile = await prisma.profile.findFirst({ include: { user: true } });
   if (!profile) {
     throw new Error('Profile record not found');

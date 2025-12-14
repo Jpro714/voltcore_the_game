@@ -1,0 +1,179 @@
+.dm-screen {
+  display: flex;
+  gap: 20px;
+  min-height: 500px;
+}
+
+.dm-screen__sidebar {
+  width: 280px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dm-screen__sidebar header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dm-screen__sidebar header button {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: #f5f6fa;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.dm-screen__sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-screen__conversation {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  color: inherit;
+  position: relative;
+  cursor: pointer;
+}
+
+.dm-screen__conversation--active {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dm-screen__conversation-name {
+  font-weight: 600;
+  display: block;
+}
+
+.dm-screen__conversation-handle {
+  color: #9aa7c4;
+  font-size: 0.85rem;
+}
+
+.dm-screen__conversation-preview {
+  color: #cdd5f0;
+  font-size: 0.9rem;
+  margin: 6px 0 0 0;
+}
+
+.dm-screen__conversation-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #1d9bf0;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.dm-screen__thread {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.dm-screen__thread-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dm-screen__thread-avatar {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.dm-screen__thread-avatar img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.dm-screen__messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.dm-screen__message {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dm-screen__message--incoming {
+  background: rgba(255, 255, 255, 0.08);
+  align-self: flex-start;
+}
+
+.dm-screen__message--outgoing {
+  background: #1d9bf0;
+  align-self: flex-end;
+}
+
+.dm-screen__message span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  align-self: flex-end;
+}
+
+.dm-screen__composer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dm-screen__composer textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  color: #f5f6fa;
+  padding: 10px;
+  resize: vertical;
+}
+
+.dm-screen__composer button {
+  align-self: flex-end;
+  background: #1d9bf0;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.dm-screen__status {
+  color: #9aa7c4;
+}
+
+.dm-screen__status--error {
+  color: #ff6b6b;
+}

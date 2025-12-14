@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { type ComponentType, useState } from 'react';
 import FeedScreen from './screens/FeedScreen';
 import ExploreScreen from './screens/ExploreScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import DirectMessagesScreen from './screens/DirectMessagesScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import TweetDetailScreen from './screens/TweetDetailScreen';
 import AuthorProfileScreen from './screens/AuthorProfileScreen';
@@ -10,11 +11,19 @@ import { FeedProvider } from './context/FeedContext';
 import { Tweet, User } from './types/feed';
 import './styles/App.css';
 
-const navigationScreens = {
-  feed: { label: 'Home', Component: FeedScreen },
+const navigationScreens: Record<
+  string,
+  {
+    label: string;
+    Component: ComponentType<any>;
+    withProfileNav?: boolean;
+  }
+> = {
+  feed: { label: 'Home', Component: FeedScreen, withProfileNav: true },
   explore: { label: 'Explore', Component: ExploreScreen },
   notifications: { label: 'Notifications', Component: NotificationsScreen },
-  profile: { label: 'Profile', Component: ProfileScreen },
+  messages: { label: 'Messages', Component: DirectMessagesScreen },
+  profile: { label: 'Profile', Component: ProfileScreen, withProfileNav: true },
 };
 
 type NavScreenKey = keyof typeof navigationScreens;
@@ -29,6 +38,7 @@ function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenKey>('feed');
   const [lastNavScreen, setLastNavScreen] = useState<NavScreenKey>('feed');
   const [detailStack, setDetailStack] = useState<DetailEntry[]>([]);
+  const [conversationTarget, setConversationTarget] = useState<{ handle: string; ts: number } | null>(null);
 
   const currentDetail = detailStack[detailStack.length - 1];
 
@@ -46,6 +56,12 @@ function App() {
   const openAuthorProfile = (user: User) => {
     setDetailStack((prev) => [...prev, { type: 'profile', handle: user.handle }]);
     setActiveScreen('detail');
+  };
+
+  const openConversationThread = (handle: string) => {
+    setConversationTarget({ handle, ts: Date.now() });
+    setDetailStack([]);
+    setActiveScreen('messages');
   };
 
   const openRelationshipList = (handle: string, relation: 'followers' | 'following') => {
@@ -86,23 +102,36 @@ function App() {
             onSelectProfile={openAuthorProfile}
             onViewFollowers={() => openRelationshipList(currentDetail.handle, 'followers')}
             onViewFollowing={() => openRelationshipList(currentDetail.handle, 'following')}
+            onStartConversation={() => openConversationThread(currentDetail.handle)}
           />
         );
       }
 
-      return (
-        <RelationshipListScreen
-          handle={currentDetail.handle}
-          type={currentDetail.relation}
-          onBack={handleBackFromDetail}
-          onSelectProfile={openAuthorProfile}
-        />
-      );
+      if (currentDetail.type === 'relationship') {
+        return (
+          <RelationshipListScreen
+            handle={currentDetail.handle}
+            type={currentDetail.relation}
+            onBack={handleBackFromDetail}
+            onSelectProfile={openAuthorProfile}
+          />
+        );
+      }
+      return null;
     }
 
     const Component = navigationScreens[activeScreen as NavScreenKey].Component;
     if (activeScreen === 'feed') {
       return <Component onSelectTweet={openTweetDetail} onSelectProfile={openAuthorProfile} />;
+    }
+    if (activeScreen === 'messages') {
+      return (
+        <Component
+          onOpenProfile={openAuthorProfile}
+          initialThreadTarget={conversationTarget}
+          onThreadViewed={() => setConversationTarget(null)}
+        />
+      );
     }
     return <Component />;
   };

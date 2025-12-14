@@ -16,6 +16,11 @@ import {
   likePost,
   unfollowUser,
 } from './services/feedService';
+import {
+  getConversationSummaries,
+  getConversationThread,
+  sendDirectMessage,
+} from './services/directMessageService';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -127,6 +132,37 @@ app.delete('/api/users/:handle/follow', async (req, res) => {
   try {
     const profile = await unfollowUser(req.params.handle);
     res.json(profile);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.get('/api/direct-messages/conversations', async (_req, res) => {
+  try {
+    const conversations = await getConversationSummaries();
+    res.json(conversations);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+});
+
+app.get('/api/direct-messages/conversations/:handle', async (req, res) => {
+  try {
+    const thread = await getConversationThread(req.params.handle);
+    res.json(thread);
+  } catch (error) {
+    res.status(404).json({ message: (error as Error).message });
+  }
+});
+
+app.post('/api/direct-messages/conversations/:handle', async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'content must be a string' });
+    }
+    const message = await sendDirectMessage(req.params.handle, content);
+    res.status(201).json(message);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
   }

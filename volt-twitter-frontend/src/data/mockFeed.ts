@@ -1,6 +1,17 @@
-import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet, User } from '../types/feed';
+import {
+  AuthorProfile,
+  ConversationSummary,
+  ConversationThread,
+  DirectMessage,
+  NotificationItem,
+  ProfileSummary,
+  TrendTopic,
+  Tweet,
+  User,
+} from '../types/feed';
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000).toISOString();
+const minutesAgoDate = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000);
 
 const avatar = (seed: string) => `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`;
 
@@ -75,6 +86,15 @@ const journalist: User = withSocialStats({
 });
 
 const mockUsers: User[] = [playerUser, voltcoreSpokes, rumorBroker, chemist, journalist];
+
+type MockDirectMessage = {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  content: string;
+  createdAt: Date;
+  readAt?: Date;
+};
 
 const findUserByHandle = (handle: string) => mockUsers.find((candidate) => candidate.handle === handle);
 const findUserById = (id: string) => mockUsers.find((candidate) => candidate.id === id);
@@ -229,6 +249,38 @@ export const mockTrendingTopics: TrendTopic[] = [
   },
 ];
 
+const directMessages: MockDirectMessage[] = [
+  {
+    id: 'dm-1',
+    senderId: 'rumor',
+    recipientId: 'player',
+    content: 'You still sitting on that Lucid leak? Buyers are impatient.',
+    createdAt: minutesAgoDate(55),
+  },
+  {
+    id: 'dm-2',
+    senderId: 'player',
+    recipientId: 'rumor',
+    content: 'Loyalty costs more than rumor margins. Try again.',
+    createdAt: minutesAgoDate(50),
+    readAt: minutesAgoDate(49),
+  },
+  {
+    id: 'dm-3',
+    senderId: 'chemist',
+    recipientId: 'player',
+    content: 'Got Lucid batch 14 notes if you bring a clean recorder.',
+    createdAt: minutesAgoDate(25),
+  },
+  {
+    id: 'dm-4',
+    senderId: 'player',
+    recipientId: 'chemist',
+    content: 'Deal. Meet in Neon District? Need proof it won’t melt my skull.',
+    createdAt: minutesAgoDate(23),
+  },
+];
+
 const playerPinnedTimelineTweet = mockTimeline.find((tweet) => tweet.id === 'tw-5');
 
 export const buildMockProfile = (): ProfileSummary => ({
@@ -366,4 +418,105 @@ export const getMockFollowing = (handle: string): User[] | undefined => {
   }
   const followingIds = mockFollowPairs.filter((pair) => pair.followerId === target.id).map((pair) => pair.followingId);
   return buildRelationshipList(followingIds);
+};
+
+const buildDirectMessage = (record: MockDirectMessage): DirectMessage | undefined => {
+  const sender = findUserById(record.senderId);
+  const recipient = findUserById(record.recipientId);
+  if (!sender || !recipient) {
+    return undefined;
+  }
+
+  return {
+    id: record.id,
+    content: record.content,
+    timestamp: record.createdAt.toISOString(),
+    sender: snapshotUser(sender),
+    recipient: snapshotUser(recipient),
+    isMine: record.senderId === playerUser.id,
+    readAt: record.readAt ? record.readAt.toISOString() : undefined,
+  };
+};
+
+export const getMockConversations = (): ConversationSummary[] => {
+  const viewerId = playerUser.id;
+  const sorted = [...directMessages].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const summaries = new Map<string, ConversationSummary>();
+
+  sorted.forEach((record) => {
+    const otherId = record.senderId === viewerId ? record.recipientId : record.senderId;
+    const otherUser = findUserById(otherId);
+    if (!otherUser) {
+      return;
+    }
+
+    if (!summaries.has(otherId)) {
+      const message = buildDirectMessage(record);
+      if (message) {
+        summaries.set(otherId, {
+          user: snapshotUser(otherUser),
+          lastMessage: message,
+          unreadCount: 0,
+        });
+      }
+    }
+
+    if (record.recipientId === viewerId && !record.readAt) {
+      const summary = summaries.get(otherId);
+      if (summary) {
+        summary.unreadCount += 1;
+      }
+    }
+  });
+
+  return Array.from(summaries.values());
+};
+
+export const getMockConversation = (handle: string): ConversationThread | undefined => {
+  const user = findUserByHandle(handle);
+  if (!user) {
+    return undefined;
+  }
+
+  const viewerId = playerUser.id;
+  const targetId = user.id;
+
+  directMessages.forEach((record) => {
+    if (record.senderId === targetId && record.recipientId === viewerId && !record.readAt) {
+      record.readAt = new Date();
+    }
+  });
+
+  const messages = directMessages
+    .filter(
+      (record) =>
+        (record.senderId === viewerId && record.recipientId === targetId) ||
+        (record.senderId === targetId && record.recipientId === viewerId),
+    )
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    .map((record) => buildDirectMessage(record))
+    .filter((message): message is DirectMessage => Boolean(message));
+
+  return {
+    user: snapshotUser(user),
+    messages,
+  };
+};
+
+export const sendMockDirectMessage = (handle: string, content: string): DirectMessage | undefined => {
+  const user = findUserByHandle(handle);
+  if (!user) {
+    return undefined;
+  }
+
+  const record: MockDirectMessage = {
+    id: `dm-${Date.now()}`,
+    senderId: playerUser.id,
+    recipientId: user.id,
+    content,
+    createdAt: new Date(),
+  };
+
+  directMessages.push(record);
+  return buildDirectMessage(record);
 };

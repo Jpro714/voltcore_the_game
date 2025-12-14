@@ -63,3 +63,24 @@ export interface AuthorProfileResponse {
   viewerIsFollowing: boolean;
   isViewer: boolean;
 }
+
+export interface DirectMessageResponse {
+  id: string;
+  content: string;
+  timestamp: string;
+  sender: User;
+  recipient: User;
+  isMine: boolean;
+  readAt?: string | null;
+}
+
+export interface ConversationSummaryResponse {
+  user: User;
+  lastMessage: DirectMessageResponse;
+  unreadCount: number;
+}
+
+export interface ConversationThreadResponse {
+  user: User;
+  messages: DirectMessageResponse[];
+}
