@@ -4,7 +4,7 @@ const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 100
 
 const avatar = (seed: string) => `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`;
 
-export const mockFollowPairs = [
+export const mockFollowPairs: Array<{ followerId: string; followingId: string }> = [
   { followerId: 'player', followingId: 'voltcore' },
   { followerId: 'player', followingId: 'rumor' },
   { followerId: 'player', followingId: 'chemist' },
@@ -13,10 +13,12 @@ export const mockFollowPairs = [
   { followerId: 'journalist', followingId: 'voltcore' },
   { followerId: 'journalist', followingId: 'rumor' },
   { followerId: 'voltcore', followingId: 'rumor' },
-] as const;
+] ;
 
 const followerCount = (userId: string) => mockFollowPairs.filter((pair) => pair.followingId === userId).length;
 const followingCount = (userId: string) => mockFollowPairs.filter((pair) => pair.followerId === userId).length;
+const isFollowing = (followerId: string, followingId: string) =>
+  mockFollowPairs.some((pair) => pair.followerId === followerId && pair.followingId === followingId);
 
 type UserSeed = Omit<User, 'followers' | 'following'>;
 
@@ -294,5 +296,33 @@ export const getMockAuthorProfile = (handle: string): AuthorProfile | undefined 
       posts: posts.length,
     },
     posts,
+    viewerIsFollowing: isFollowing(playerUser.id, user.id),
+    isViewer: user.id === playerUser.id,
   };
 };
+
+const updateMockFollow = (handle: string, action: 'follow' | 'unfollow'): AuthorProfile | undefined => {
+  const user = mockUsers.find((candidate) => candidate.handle === handle);
+  if (!user || user.id === playerUser.id) {
+    return getMockAuthorProfile(handle);
+  }
+
+  if (action === 'follow') {
+    if (!isFollowing(playerUser.id, user.id)) {
+      mockFollowPairs.push({ followerId: playerUser.id, followingId: user.id });
+    }
+  } else {
+    const index = mockFollowPairs.findIndex(
+      (pair) => pair.followerId === playerUser.id && pair.followingId === user.id,
+    );
+    if (index >= 0) {
+      mockFollowPairs.splice(index, 1);
+    }
+  }
+
+  return getMockAuthorProfile(handle);
+};
+
+export const followMockAuthor = (handle: string) => updateMockFollow(handle, 'follow');
+
+export const unfollowMockAuthor = (handle: string) => updateMockFollow(handle, 'unfollow');

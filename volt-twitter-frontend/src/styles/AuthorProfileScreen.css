@@ -20,12 +20,49 @@
   border-radius: 20px;
   padding: 20px;
   background: rgba(255, 255, 255, 0.03);
+  align-items: flex-start;
 }
 
 .author-profile__hero img {
   width: 96px;
   height: 96px;
   border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.author-profile__details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.author-profile__header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.author-profile__follow-btn {
+  background: #1d9bf0;
+  border: none;
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.author-profile__follow-btn--active {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #f5f6fa;
+}
+
+.author-profile__follow-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .author-profile__tagline {

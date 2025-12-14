@@ -4,6 +4,7 @@ import cors from 'cors';
 import {
   createPost,
   createReply,
+  followUser,
   getAuthorProfile,
   getNotifications,
   getPostById,
@@ -11,6 +12,7 @@ import {
   getTimeline,
   getTrendingTopics,
   likePost,
+  unfollowUser,
 } from './services/feedService';
 
 const app = express();
@@ -107,6 +109,24 @@ app.get('/api/users/:handle', async (req, res) => {
     res.json(profile);
   } catch (error) {
     res.status(404).json({ message: (error as Error).message });
+  }
+});
+
+app.post('/api/users/:handle/follow', async (req, res) => {
+  try {
+    const profile = await followUser(req.params.handle);
+    res.json(profile);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.delete('/api/users/:handle/follow', async (req, res) => {
+  try {
+    const profile = await unfollowUser(req.params.handle);
+    res.json(profile);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
   }
 });
 

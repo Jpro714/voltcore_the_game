@@ -1,5 +1,6 @@
 import { apiRequest, isApiEnabled } from './config';
 import {
+  followMockAuthor,
   getMockAuthorProfile,
   getMockTweetWithThread,
   mockNotifications,
@@ -9,6 +10,7 @@ import {
   playerUser,
   recordMockLike,
   recordMockReply,
+  unfollowMockAuthor,
 } from '../data/mockFeed';
 import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
 
@@ -132,4 +134,32 @@ export const fetchAuthorProfile = async (handle: string) => {
     throw new Error('User not found.');
   }
   return fromMock(fallback, 200);
+};
+
+export const followAuthor = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<AuthorProfile>(`/api/users/${encodeURIComponent(handle)}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  const updated = followMockAuthor(handle);
+  if (!updated) {
+    throw new Error('User not found.');
+  }
+  return fromMock(updated, 150);
+};
+
+export const unfollowAuthor = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<AuthorProfile>(`/api/users/${encodeURIComponent(handle)}/follow`, {
+      method: 'DELETE',
+    });
+  }
+
+  const updated = unfollowMockAuthor(handle);
+  if (!updated) {
+    throw new Error('User not found.');
+  }
+  return fromMock(updated, 150);
 };

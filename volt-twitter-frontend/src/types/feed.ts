@@ -60,4 +60,6 @@ export interface AuthorProfile {
     posts: number;
   };
   posts: Tweet[];
+  viewerIsFollowing: boolean;
+  isViewer: boolean;
 }

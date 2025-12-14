@@ -149,6 +149,7 @@ export const getProfile = async (): Promise<ProfileResponse> => {
 };
 
 export const getAuthorProfile = async (identifier: string): Promise<AuthorProfileResponse> => {
+  const viewerProfile = await requireProfile();
   const user = await prisma.user.findFirst({
     where: {
       OR: [{ handle: identifier }, { id: identifier }],
@@ -168,6 +169,21 @@ export const getAuthorProfile = async (identifier: string): Promise<AuthorProfil
     throw new Error('User not found');
   }
 
+  const isViewer = user.id === viewerProfile.userId;
+  let viewerIsFollowing = false;
+  if (!isViewer) {
+    const relation = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: viewerProfile.userId,
+          followingId: user.id,
+        },
+      },
+      select: { id: true },
+    });
+    viewerIsFollowing = Boolean(relation);
+  }
+
   return {
     user: mapUser(user as UserWithCounts),
     bio: user.bio,
@@ -178,6 +194,8 @@ export const getAuthorProfile = async (identifier: string): Promise<AuthorProfil
       posts: user.posts.length,
     },
     posts: user.posts.map(mapPost),
+    viewerIsFollowing,
+    isViewer,
   };
 };
 
@@ -257,4 +275,62 @@ export const likePost = async (postId: string): Promise<PostResponse> => {
   });
 
   return mapPost(updated);
+};
+
+const findUserByIdentifier = (identifier: string) =>
+  prisma.user.findFirst({
+    where: {
+      OR: [{ handle: identifier }, { id: identifier }],
+    },
+  });
+
+export const followUser = async (identifier: string): Promise<AuthorProfileResponse> => {
+  const viewerProfile = await requireProfile();
+  const target = await findUserByIdentifier(identifier);
+
+  if (!target) {
+    throw new Error('User not found');
+  }
+
+  if (target.id === viewerProfile.userId) {
+    throw new Error('Cannot follow yourself');
+  }
+
+  await prisma.follow.upsert({
+    where: {
+      followerId_followingId: {
+        followerId: viewerProfile.userId,
+        followingId: target.id,
+      },
+    },
+    update: {},
+    create: {
+      followerId: viewerProfile.userId,
+      followingId: target.id,
+    },
+  });
+
+  return getAuthorProfile(target.handle);
+};
+
+export const unfollowUser = async (identifier: string): Promise<AuthorProfileResponse> => {
+  const viewerProfile = await requireProfile();
+  const target = await findUserByIdentifier(identifier);
+
+  if (!target) {
+    throw new Error('User not found');
+  }
+
+  if (target.id === viewerProfile.userId) {
+    throw new Error('Cannot unfollow yourself');
+  }
+
+  await prisma.follow.deleteMany({
+    where: {
+      followerId: viewerProfile.userId,
+      followingId: target.id,
+    },
+  });
+
+  return getAuthorProfile(target.handle);
 };

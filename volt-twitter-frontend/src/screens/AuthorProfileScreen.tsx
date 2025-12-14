@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import TweetCard from '../components/TweetCard';
-import { fetchAuthorProfile } from '../api/feedApi';
+import { fetchAuthorProfile, followAuthor, unfollowAuthor } from '../api/feedApi';
 import { useFeed } from '../context/FeedContext';
 import { AuthorProfile, Tweet, User } from '../types/feed';
 import '../styles/AuthorProfileScreen.css';
@@ -13,10 +13,11 @@ interface Props {
 }
 
 const AuthorProfileScreen: React.FC<Props> = ({ handle, onBack, onSelectTweet, onSelectProfile }) => {
-  const { likeTweet } = useFeed();
+  const { likeTweet, refresh } = useFeed();
   const [profile, setProfile] = useState<AuthorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowMutating, setIsFollowMutating] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
@@ -42,6 +43,26 @@ const AuthorProfileScreen: React.FC<Props> = ({ handle, onBack, onSelectTweet, o
           }
         : prev,
     );
+  };
+
+  const handleFollowToggle = async () => {
+    if (!profile || profile.isViewer) {
+      return;
+    }
+
+    setIsFollowMutating(true);
+    setError(null);
+    try {
+      const updated = profile.viewerIsFollowing
+        ? await unfollowAuthor(profile.user.handle)
+        : await followAuthor(profile.user.handle);
+      setProfile(updated);
+      void refresh();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsFollowMutating(false);
+    }
   };
 
   if (isLoading) {
@@ -74,9 +95,28 @@ const AuthorProfileScreen: React.FC<Props> = ({ handle, onBack, onSelectTweet, o
 
       <header className="author-profile__hero">
         <img src={profile.user.avatar} alt={profile.user.displayName} />
-        <div>
-          <h2>{profile.user.displayName}</h2>
-          <p>@{profile.user.handle}</p>
+        <div className="author-profile__details">
+          <div className="author-profile__header-row">
+            <div>
+              <h2>{profile.user.displayName}</h2>
+              <p>@{profile.user.handle}</p>
+            </div>
+            {!profile.isViewer && (
+              <button
+                type="button"
+                className={
+                  profile.viewerIsFollowing
+                    ? 'author-profile__follow-btn author-profile__follow-btn--active'
+                    : 'author-profile__follow-btn'
+                }
+                onClick={handleFollowToggle}
+                disabled={isFollowMutating}
+                aria-pressed={profile.viewerIsFollowing}
+              >
+                {profile.viewerIsFollowing ? 'Following' : 'Follow'}
+              </button>
+            )}
+          </div>
           {profile.user.tagline && <p className="author-profile__tagline">{profile.user.tagline}</p>}
           {profile.bio && <p className="author-profile__bio">{profile.bio}</p>}
           {profile.location && <p className="author-profile__location">📍 {profile.location}</p>}

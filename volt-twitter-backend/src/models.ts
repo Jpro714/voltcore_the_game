@@ -60,4 +60,6 @@ export interface AuthorProfileResponse {
     posts: number;
   };
   posts: PostResponse[];
+  viewerIsFollowing: boolean;
+  isViewer: boolean;
 }

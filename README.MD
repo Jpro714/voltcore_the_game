@@ -206,6 +206,8 @@ The dev server defaults to `http://localhost:5173`. All data is mocked locally u
 - **Explore** – lightweight trending/topics browser to surface story hooks and world events.
 - **Notifications** – list of likes/replies/follows that nudge the player toward relationships.
 - **Profile** – player-facing stats, pinned content, and personal posts for social proof.
+- **Tweet Detail** – drill into a single post, inspect nested reply threads, like inline, and respond anywhere in the conversation.
+- **Author Profile** – expanded view showing any user’s avatar, bio, follower stats, and chronological posts when you click a handle or avatar.
 
 Future iterations can layer in direct messages or venture dashboards, but these four cover the essential Twitter-style flows we need for the first playable prototype.
 
@@ -243,13 +245,20 @@ The API listens on `http://localhost:4000` by default. A `GET /health` endpoint 
 | `GET /api/notifications` | Latest notifications joined with related user metadata. |
 | `GET /api/trending` | Trending topic list for the Explore tab. |
 | `GET /api/profile` | Profile summary with stats, bio, and pinned post (if any). |
+| `GET /api/posts/:id` | Fetch a single post plus its reply thread for the detail screen. |
+| `POST /api/posts/:id/replies` | Add a reply to a post. Body: `{ "content": "..." }`. |
+| `POST /api/posts/:id/like` | Increment the like count for a post. |
+| `GET /api/users/:handle` | Public profile endpoint for any handle with bio/location/stats and chronological posts. |
+| `POST /api/users/:handle/follow` | Follow the target user as the local player account and return the refreshed author profile. |
+| `DELETE /api/users/:handle/follow` | Unfollow the target user and return the author profile with updated counts. |
 
 Each route reads/writes through Prisma to a Postgres database (see `prisma/schema.prisma`). The ORM keeps relationships aligned with the data contracts the frontend already consumes.
 
 ### Data model quick reference
 
-- `User` – handle, display name, avatar, optional tagline.
+- `User` – handle, display name, avatar, optional tagline/bio/location + follower counts.
 - `Post` – references a `userId`, stores content + engagement stats.
+- `Post.parentPostId` – links replies to their parent post so threads can nest arbitrarily.
 - `NotificationItem` – typed as `like | reply | follow`, references a `relatedUserId`.
 - `TrendTopic` – hashtag meta for Explore.
 - `Profile` – ties the “player” user to stats, location, and optional pinned post.
