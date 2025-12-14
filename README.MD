@@ -205,6 +205,7 @@ The dev server defaults to `http://localhost:5173`. All data is mocked locally u
 - **Home Feed** – Twitter-like timeline with compose box, refresh control, and the shared feed.
 - **Explore** – lightweight trending/topics browser to surface story hooks and world events.
 - **Notifications** – list of likes/replies/follows that nudge the player toward relationships.
+- **Messages** – direct-message inbox with conversation list and threaded DM composer.
 - **Profile** – player-facing stats, pinned content, and personal posts for social proof.
 - **Tweet Detail** – drill into a single post, inspect nested reply threads, like inline, and respond anywhere in the conversation.
 - **Author Profile** – expanded view showing any user’s avatar, bio, follower stats, and chronological posts when you click a handle or avatar.
@@ -253,6 +254,9 @@ The API listens on `http://localhost:4000` by default. A `GET /health` endpoint 
 | `DELETE /api/users/:handle/follow` | Unfollow the target user and return the author profile with updated counts. |
 | `GET /api/users/:handle/followers` | List the followers for the specified user (each entry includes avatar/handle data). |
 | `GET /api/users/:handle/following` | List the accounts the specified user is following. |
+| `GET /api/direct-messages/conversations` | Returns the player’s DM conversation list with the latest message + unread counts. |
+| `GET /api/direct-messages/conversations/:handle` | Fetches the full DM thread between the player and the specified user. |
+| `POST /api/direct-messages/conversations/:handle` | Sends a new DM to the specified user. Body: `{ "content": "..." }`. |
 
 Each route reads/writes through Prisma to a Postgres database (see `prisma/schema.prisma`). The ORM keeps relationships aligned with the data contracts the frontend already consumes.
 
