@@ -1,5 +1,14 @@
 import { apiRequest, isApiEnabled } from './config';
-import { mockNotifications, mockProfile, mockTimeline, mockTrendingTopics, playerUser } from '../data/mockFeed';
+import {
+  getMockTweetWithThread,
+  mockNotifications,
+  mockProfile,
+  mockTimeline,
+  mockTrendingTopics,
+  playerUser,
+  recordMockLike,
+  recordMockReply,
+} from '../data/mockFeed';
 import { NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
 
 const clone = <T>(input: T): T => JSON.parse(JSON.stringify(input));
@@ -55,4 +64,59 @@ export const createPost = async (content: string) => {
 
   mockTimeline.unshift(newTweet);
   return fromMock(newTweet, 300);
+};
+
+export const fetchPostById = async (postId: string) => {
+  if (isApiEnabled) {
+    return apiRequest<Tweet>(`/api/posts/${encodeURIComponent(postId)}`);
+  }
+
+  const fallback = getMockTweetWithThread(postId);
+  if (!fallback) {
+    throw new Error('Post not found.');
+  }
+  return fromMock(fallback, 200);
+};
+
+export const replyToPost = async (postId: string, content: string) => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('Reply must contain text.');
+  }
+
+  if (isApiEnabled) {
+    return apiRequest<Tweet>(`/api/posts/${encodeURIComponent(postId)}/replies`, {
+      method: 'POST',
+      body: JSON.stringify({ content: trimmed }),
+    });
+  }
+
+  const newReply: Tweet = {
+    id: `reply-${Date.now()}`,
+    author: playerUser,
+    content: trimmed,
+    timestamp: new Date().toISOString(),
+    likes: 0,
+    replies: 0,
+    reposts: 0,
+    parentId: postId,
+  };
+
+  recordMockReply(postId, newReply);
+  return fromMock(newReply, 200);
+};
+
+export const likeTweet = async (postId: string) => {
+  if (isApiEnabled) {
+    return apiRequest<Tweet>(`/api/posts/${encodeURIComponent(postId)}/like`, {
+      method: 'POST',
+    });
+  }
+
+  recordMockLike(postId);
+  const liked = getMockTweetWithThread(postId) ?? mockTimeline.find((tweet) => tweet.id === postId);
+  if (!liked) {
+    throw new Error('Tweet not found.');
+  }
+  return fromMock(liked, 150);
 };

@@ -5,6 +5,8 @@ import {
   fetchProfileSummary,
   fetchTimeline,
   fetchTrendingTopics,
+  likeTweet as likeTweetRequest,
+  replyToPost as replyToPostRequest,
 } from '../api/feedApi';
 import { NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
 
@@ -17,6 +19,8 @@ interface FeedContextValue {
   isPosting: boolean;
   refresh: () => Promise<void>;
   createPost: (content: string) => Promise<void>;
+  likeTweet: (tweetId: string) => Promise<Tweet>;
+  replyToPost: (targetId: string, content: string, rootId?: string) => Promise<Tweet>;
 }
 
 const FeedContext = createContext<FeedContextValue | undefined>(undefined);
@@ -32,6 +36,7 @@ export const FeedProvider = ({ children }: FeedProviderProps) => {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
+  const [viewStack, setViewStack] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -78,6 +83,33 @@ export const FeedProvider = ({ children }: FeedProviderProps) => {
     }
   }, []);
 
+  const updateTimelineEntry = useCallback((updated: Tweet) => {
+    setTimeline((prev) => prev.map((tweet) => (tweet.id === updated.id ? { ...tweet, ...updated } : tweet)));
+  }, []);
+
+  const likeTweet = useCallback(
+    async (tweetId: string) => {
+      const updated = await likeTweetRequest(tweetId);
+      updateTimelineEntry(updated);
+      return updated;
+    },
+    [updateTimelineEntry],
+  );
+
+  const replyToPost = useCallback(
+    async (targetId: string, content: string, rootId?: string) => {
+      const reply = await replyToPostRequest(targetId, content);
+      const targetTimelineId = rootId ?? targetId;
+      setTimeline((prev) =>
+        prev.map((tweet) =>
+          tweet.id === targetTimelineId ? { ...tweet, replies: tweet.replies + 1 } : tweet,
+        ),
+      );
+      return reply;
+    },
+    [],
+  );
+
   const value = useMemo<FeedContextValue>(
     () => ({
       timeline,
@@ -88,8 +120,21 @@ export const FeedProvider = ({ children }: FeedProviderProps) => {
       isPosting,
       refresh,
       createPost,
+      likeTweet,
+      replyToPost,
     }),
-    [timeline, notifications, trendingTopics, profile, isLoading, isPosting, refresh, createPost],
+    [
+      timeline,
+      notifications,
+      trendingTopics,
+      profile,
+      isLoading,
+      isPosting,
+      refresh,
+      createPost,
+      likeTweet,
+      replyToPost,
+    ],
   );
 
   return <FeedContext.Provider value={value}>{children}</FeedContext.Provider>;

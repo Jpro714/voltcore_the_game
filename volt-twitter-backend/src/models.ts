@@ -15,6 +15,8 @@ export interface PostResponse {
   reposts: number;
   isPinned?: boolean | null;
   author: User;
+  parentId?: string | null;
+  thread?: PostResponse[];
 }
 
 export interface NotificationResponse {

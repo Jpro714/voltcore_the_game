@@ -7,6 +7,31 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.tweet-card--interactive {
+  cursor: pointer;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.tweet-card--interactive:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.tweet-card--interactive:focus-visible {
+  outline: 2px solid #ffc371;
+  outline-offset: 4px;
+}
+
+.tweet-card--thread {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tweet-card--thread .tweet-card__avatar {
+  width: 40px;
+  height: 40px;
+}
+
 .tweet-card__avatar {
   width: 48px;
   height: 48px;
@@ -46,6 +71,21 @@
   gap: 12px;
   color: #9aa7c4;
   font-size: 0.85rem;
+}
+
+.tweet-card__action {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f5f6fa;
+  border-radius: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.tweet-card__action:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .tweet-card__badge {

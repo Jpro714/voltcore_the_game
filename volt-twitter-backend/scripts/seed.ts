@@ -42,25 +42,25 @@ const users = [
   },
 ];
 
-const posts = [
+const basePosts = [
   {
     id: 'tw-1',
     authorId: 'voltcore',
     content: 'We just shipped Voltcore//Lucid: a drip IV for your ambition. Early trials start tonight in Neon District Sector 7.',
-    createdAt: minutesAgo(12),
-    likes: 890,
-    replies: 312,
-    reposts: 204,
+    createdAt: minutesAgo(22),
+    likes: 280,
+    replies: 2,
+    reposts: 58,
     isPinned: false,
   },
   {
     id: 'tw-2',
     authorId: 'rumor',
     content: '⚠️ Hearing Voltcore is bribing port inspectors with lifetime stim allotments. Anyone got eyes on Bay 44?',
-    createdAt: minutesAgo(24),
-    likes: 420,
-    replies: 201,
-    reposts: 159,
+    createdAt: minutesAgo(48),
+    likes: 120,
+    replies: 1,
+    reposts: 31,
     isPinned: false,
   },
   {
@@ -68,9 +68,9 @@ const posts = [
     authorId: 'chemist',
     content: 'Just cracked an unofficial Lucid vial. Composition looks like caffeine + hypericin analogs + ???. No safety seals.',
     createdAt: minutesAgo(38),
-    likes: 318,
-    replies: 87,
-    reposts: 121,
+    likes: 96,
+    replies: 0,
+    reposts: 22,
     isPinned: false,
   },
   {
@@ -78,9 +78,9 @@ const posts = [
     authorId: 'journalist',
     content: 'City Council wants hearings on corporate mood hacking. Voltcore, LuminDyn, and three startup labs are subpoenaed.',
     createdAt: minutesAgo(58),
-    likes: 189,
-    replies: 43,
-    reposts: 80,
+    likes: 75,
+    replies: 0,
+    reposts: 18,
     isPinned: false,
   },
   {
@@ -88,12 +88,50 @@ const posts = [
     authorId: 'player',
     content: 'Debating whether to pitch Voltcore on a micro-influencer loyalty loop. Might just build my own rogue promo coop.',
     createdAt: minutesAgo(95),
-    likes: 66,
-    replies: 12,
-    reposts: 9,
+    likes: 54,
+    replies: 0,
+    reposts: 12,
     isPinned: true,
   },
 ];
+
+const replyPosts = [
+  {
+    id: 'tw-1-reply-1',
+    authorId: 'chemist',
+    content: 'Just tested Lucid batch #14. Seeing stabilizers but the solvent ratios are still sketchy.',
+    createdAt: minutesAgo(18),
+    likes: 42,
+    replies: 0,
+    reposts: 3,
+    isPinned: false,
+    parentPostId: 'tw-1',
+  },
+  {
+    id: 'tw-1-reply-2',
+    authorId: 'rumor',
+    content: 'Hearing Voltcore is bribing chem auditors to sign off on whatever the Lucid team ships.',
+    createdAt: minutesAgo(16),
+    likes: 39,
+    replies: 0,
+    reposts: 5,
+    isPinned: false,
+    parentPostId: 'tw-1',
+  },
+  {
+    id: 'tw-5-reply-1',
+    authorId: 'player',
+    content: 'Might pilot the loyalty loop with chemists + smugglers first and see if Voltcore notices.',
+    createdAt: minutesAgo(40),
+    likes: 21,
+    replies: 0,
+    reposts: 2,
+    isPinned: false,
+    parentPostId: 'tw-2',
+  },
+];
+
+const posts = [...basePosts, ...replyPosts];
 
 const notifications = [
   {

@@ -35,6 +35,9 @@ model Post {
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
   pinnedFor Profile? @relation("ProfilePinnedPost")
+  parentPostId String?
+  parent       Post?    @relation("PostReplies", fields: [parentPostId], references: [id])
+  repliesList  Post[]   @relation("PostReplies")
 }
 
 model Notification {

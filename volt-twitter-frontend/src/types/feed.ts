@@ -15,6 +15,8 @@ export interface Tweet {
   replies: number;
   reposts: number;
   isPinned?: boolean;
+  parentId?: string;
+  thread?: Tweet[];
 }
 
 export interface NotificationItem {

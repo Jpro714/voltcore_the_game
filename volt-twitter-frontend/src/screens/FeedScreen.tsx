@@ -1,10 +1,21 @@
 import ComposeBox from '../components/ComposeBox';
 import TweetCard from '../components/TweetCard';
 import { useFeed } from '../context/FeedContext';
+import { Tweet } from '../types/feed';
 import '../styles/FeedScreen.css';
 
-const FeedScreen: React.FC = () => {
-  const { timeline, isLoading, refresh } = useFeed();
+interface Props {
+  onSelectTweet?: (tweet: Tweet) => void;
+}
+
+const FeedScreen: React.FC<Props> = ({ onSelectTweet }) => {
+  const { timeline, isLoading, refresh, likeTweet } = useFeed();
+
+  const handleLike = (tweet: Tweet) => {
+    likeTweet(tweet.id).catch((error) => {
+      console.error('Failed to like tweet', error);
+    });
+  };
 
   return (
     <section className="feed-screen">
@@ -19,7 +30,12 @@ const FeedScreen: React.FC = () => {
       {!isLoading && timeline.length === 0 && <p className="feed-screen__status">No posts yet.</p>}
       <div className="feed-screen__list">
         {timeline.map((tweet) => (
-          <TweetCard key={tweet.id} tweet={tweet} />
+          <TweetCard
+            key={tweet.id}
+            tweet={tweet}
+            onSelect={onSelectTweet}
+            onLike={handleLike}
+          />
         ))}
       </div>
     </section>

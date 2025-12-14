@@ -50,45 +50,88 @@ export const mockTimeline: Tweet[] = [
     author: voltcoreSpokes,
     content: 'We just shipped Voltcore//Lucid: a drip IV for your ambition. Early trials start tonight in Neon District Sector 7.',
     timestamp: minutesAgo(12),
-    likes: 890,
-    replies: 312,
-    reposts: 204,
+    likes: 280,
+    replies: 2,
+    reposts: 58,
   },
   {
     id: 'tw-2',
     author: rumorBroker,
     content: '⚠️ Hearing Voltcore is bribing port inspectors with lifetime stim allotments. Anyone got eyes on Bay 44?',
     timestamp: minutesAgo(24),
-    likes: 420,
-    replies: 201,
-    reposts: 159,
+    likes: 120,
+    replies: 1,
+    reposts: 31,
   },
   {
     id: 'tw-3',
     author: chemist,
     content: 'Just cracked an unofficial Lucid vial. Composition looks like caffeine + hypericin analogs + ???. No safety seals.',
     timestamp: minutesAgo(38),
-    likes: 318,
-    replies: 87,
-    reposts: 121,
+    likes: 96,
+    replies: 0,
+    reposts: 22,
   },
   {
     id: 'tw-4',
     author: journalist,
     content: 'City Council wants hearings on corporate mood hacking. Voltcore, LuminDyn, and three startup labs are subpoenaed.',
     timestamp: minutesAgo(58),
-    likes: 189,
-    replies: 43,
-    reposts: 80,
+    likes: 75,
+    replies: 0,
+    reposts: 18,
   },
   {
     id: 'tw-5',
     author: playerUser,
     content: 'Debating whether to pitch Voltcore on a micro-influencer loyalty loop. Might just build my own rogue promo coop.',
     timestamp: minutesAgo(95),
-    likes: 66,
-    replies: 12,
-    reposts: 9,
+    likes: 54,
+    replies: 0,
+    reposts: 12,
+  },
+];
+
+const mockReplies: Tweet[] = [
+  {
+    id: 'tw-1-reply-1',
+    author: chemist,
+    content: 'Just tested Lucid batch #14. Stabilizers are new but still volatile.',
+    timestamp: minutesAgo(18),
+    likes: 42,
+    replies: 0,
+    reposts: 3,
+    parentId: 'tw-1',
+  },
+  {
+    id: 'tw-1-reply-2',
+    author: rumorBroker,
+    content: 'Chem auditors are signing whatever Voltcore puts down. Bring receipts.',
+    timestamp: minutesAgo(15),
+    likes: 39,
+    replies: 0,
+    reposts: 5,
+    parentId: 'tw-1',
+  },
+  {
+    id: 'tw-2-reply-1',
+    author: playerUser,
+    content: 'Might hijack the port chatter to test my loyalty loop pitch...',
+    timestamp: minutesAgo(10),
+    likes: 21,
+    replies: 0,
+    reposts: 2,
+    parentId: 'tw-2',
+  },
+  {
+    id: 'tw-1-reply-1a',
+    author: rumorBroker,
+    content: 'Chemists keep warning Lucid testers and Voltcore keeps turning up the hype.',
+    timestamp: minutesAgo(8),
+    likes: 12,
+    replies: 0,
+    reposts: 1,
+    parentId: 'tw-1-reply-1',
   },
 ];
 
@@ -144,7 +187,7 @@ export const mockProfile: ProfileSummary = {
   stats: {
     followers: 1580,
     following: 403,
-    posts: 312,
+    posts: 318,
   },
   pinnedTweet: {
     id: 'tw-pinned',
@@ -156,4 +199,49 @@ export const mockProfile: ProfileSummary = {
     reposts: 390,
     isPinned: true,
   },
+};
+
+const findTimelineTweet = (id: string) => mockTimeline.find((tweet) => tweet.id === id);
+
+const buildThread = (parentId: string): Tweet[] =>
+  mockReplies
+    .filter((reply) => reply.parentId === parentId)
+    .map((reply) => ({
+      ...reply,
+      thread: buildThread(reply.id),
+    }));
+
+const cloneTweet = (tweet: Tweet): Tweet => ({
+  ...tweet,
+  thread: tweet.thread?.map(cloneTweet),
+});
+
+export const getMockTweetWithThread = (tweetId: string): Tweet | undefined => {
+  const baseTweet = findTimelineTweet(tweetId) ?? mockReplies.find((reply) => reply.id === tweetId);
+  if (!baseTweet) return undefined;
+  return cloneTweet({
+    ...baseTweet,
+    thread: buildThread(baseTweet.id),
+  });
+};
+
+export const recordMockLike = (tweetId: string) => {
+  const tweet = findTimelineTweet(tweetId) ?? mockReplies.find((reply) => reply.id === tweetId);
+  if (tweet) {
+    tweet.likes += 1;
+  }
+};
+
+export const recordMockReply = (parentId: string, reply: Tweet) => {
+  const parentTweet = findTimelineTweet(parentId);
+  const parentReply = mockReplies.find((existing) => existing.id === parentId);
+
+  mockReplies.push(reply);
+
+  if (parentTweet) {
+    parentTweet.replies += 1;
+  }
+  if (parentReply) {
+    parentReply.replies += 1;
+  }
 };
