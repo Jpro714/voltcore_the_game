@@ -1,48 +1,78 @@
-import { NotificationItem, ProfileSummary, TrendTopic, Tweet, User } from '../types/feed';
+import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet, User } from '../types/feed';
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60 * 1000).toISOString();
 
 const avatar = (seed: string) => `https://api.dicebear.com/7.x/identicon/svg?seed=${seed}`;
 
-export const playerUser: User = {
+export const mockFollowPairs = [
+  { followerId: 'player', followingId: 'voltcore' },
+  { followerId: 'player', followingId: 'rumor' },
+  { followerId: 'player', followingId: 'chemist' },
+  { followerId: 'rumor', followingId: 'voltcore' },
+  { followerId: 'chemist', followingId: 'voltcore' },
+  { followerId: 'journalist', followingId: 'voltcore' },
+  { followerId: 'journalist', followingId: 'rumor' },
+  { followerId: 'voltcore', followingId: 'rumor' },
+] as const;
+
+const followerCount = (userId: string) => mockFollowPairs.filter((pair) => pair.followingId === userId).length;
+const followingCount = (userId: string) => mockFollowPairs.filter((pair) => pair.followerId === userId).length;
+
+type UserSeed = Omit<User, 'followers' | 'following'>;
+
+const withSocialStats = (seed: UserSeed): User => ({
+  ...seed,
+  followers: followerCount(seed.id),
+  following: followingCount(seed.id),
+});
+
+export const playerUser: User = withSocialStats({
   id: 'player',
   handle: 'player_one',
   displayName: 'Player One',
   avatar: avatar('player_one'),
   tagline: 'Freelance brand alchemist',
-};
+  bio: 'Prototype handler for Voltcore experiments, writing field notes in public.',
+  location: 'Neon District',
+});
 
-const voltcoreSpokes: User = {
+const voltcoreSpokes: User = withSocialStats({
   id: 'voltcore',
   handle: 'voltcore_energy',
   displayName: 'Voltcore Energy',
   avatar: avatar('voltcore_energy'),
   tagline: 'Pure attention in a can.',
-};
+  bio: 'Corporate feed for Voltcore and Lucid launches.',
+  location: 'Skyline Tower',
+});
 
-const rumorBroker: User = {
+const rumorBroker: User = withSocialStats({
   id: 'rumor',
   handle: 'wiretap_broker',
   displayName: 'Wiretap Broker',
   avatar: avatar('wiretap_broker'),
   tagline: 'Truth, rumors, assets.',
-};
+  bio: 'Broker of whispers, burner ledgers, and panic.',
+});
 
-const chemist: User = {
+const chemist: User = withSocialStats({
   id: 'chemist',
   handle: 'synth_chemist',
   displayName: 'SynthChem Drip',
   avatar: avatar('synth_chemist'),
   tagline: 'Reverse engineering your caffeine high.',
-};
+  bio: 'Publishing every Voltcore teardown until solvent fumes win.',
+});
 
-const journalist: User = {
+const journalist: User = withSocialStats({
   id: 'journalist',
   handle: 'orbital_press',
   displayName: 'Orbital Press',
   avatar: avatar('orbital_press'),
   tagline: 'Broadcasting from the upper stratos.',
-};
+});
+
+const mockUsers: User[] = [playerUser, voltcoreSpokes, rumorBroker, chemist, journalist];
 
 export const mockTimeline: Tweet[] = [
   {
@@ -135,6 +165,8 @@ const mockReplies: Tweet[] = [
   },
 ];
 
+const getPostsByUser = (userId: string) => [...mockTimeline, ...mockReplies].filter((tweet) => tweet.author.id === userId);
+
 export const mockNotifications: NotificationItem[] = [
   {
     id: 'nt-1',
@@ -180,25 +212,23 @@ export const mockTrendingTopics: TrendTopic[] = [
   },
 ];
 
+const playerPinnedTimelineTweet = mockTimeline.find((tweet) => tweet.id === 'tw-5');
+
 export const mockProfile: ProfileSummary = {
   user: playerUser,
-  bio: 'Prototype handler for Voltcore experiments. Documenting everything.',
-  location: 'Neon District',
+  bio: playerUser.bio ?? 'Prototype handler for Voltcore experiments. Documenting everything.',
+  location: playerUser.location ?? 'Neon District',
   stats: {
-    followers: 1580,
-    following: 403,
-    posts: 318,
+    followers: followerCount(playerUser.id),
+    following: followingCount(playerUser.id),
+    posts: getPostsByUser(playerUser.id).length,
   },
-  pinnedTweet: {
-    id: 'tw-pinned',
-    author: playerUser,
-    content: 'Thread: How to hijack a megacorp launch with 5 collaborators and an unstable meme.',
-    timestamp: minutesAgo(1200),
-    likes: 1220,
-    replies: 441,
-    reposts: 390,
-    isPinned: true,
-  },
+  pinnedTweet: playerPinnedTimelineTweet
+    ? {
+        ...playerPinnedTimelineTweet,
+        isPinned: true,
+      }
+    : undefined,
 };
 
 const findTimelineTweet = (id: string) => mockTimeline.find((tweet) => tweet.id === id);
@@ -244,4 +274,25 @@ export const recordMockReply = (parentId: string, reply: Tweet) => {
   if (parentReply) {
     parentReply.replies += 1;
   }
+};
+
+export const getMockAuthorProfile = (handle: string): AuthorProfile | undefined => {
+  const user = mockUsers.find((candidate) => candidate.handle === handle);
+  if (!user) {
+    return undefined;
+  }
+
+  const posts = getPostsByUser(user.id);
+
+  return {
+    user,
+    bio: user.bio,
+    location: user.location,
+    stats: {
+      followers: followerCount(user.id),
+      following: followingCount(user.id),
+      posts: posts.length,
+    },
+    posts,
+  };
 };

@@ -4,8 +4,9 @@ import ExploreScreen from './screens/ExploreScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import TweetDetailScreen from './screens/TweetDetailScreen';
+import AuthorProfileScreen from './screens/AuthorProfileScreen';
 import { FeedProvider } from './context/FeedContext';
-import { Tweet } from './types/feed';
+import { Tweet, User } from './types/feed';
 import './styles/App.css';
 
 const navigationScreens = {
@@ -16,9 +17,11 @@ const navigationScreens = {
 };
 
 type NavScreenKey = keyof typeof navigationScreens;
-type ScreenKey = NavScreenKey | 'tweetDetail';
+type ScreenKey = NavScreenKey | 'detail';
 
-type DetailEntry = { id: string; initial?: Tweet };
+type DetailEntry =
+  | { type: 'tweet'; tweet: Tweet }
+  | { type: 'profile'; handle: string };
 
 function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenKey>('feed');
@@ -34,8 +37,13 @@ function App() {
   };
 
   const openTweetDetail = (tweet: Tweet) => {
-    setDetailStack((prev) => [...prev, { id: tweet.id, initial: tweet }]);
-    setActiveScreen('tweetDetail');
+    setDetailStack((prev) => [...prev, { type: 'tweet', tweet }]);
+    setActiveScreen('detail');
+  };
+
+  const openAuthorProfile = (user: User) => {
+    setDetailStack((prev) => [...prev, { type: 'profile', handle: user.handle }]);
+    setActiveScreen('detail');
   };
 
   const handleBackFromDetail = () => {
@@ -49,20 +57,32 @@ function App() {
   };
 
   const renderScreen = () => {
-    if (activeScreen === 'tweetDetail' && currentDetail) {
+    if (activeScreen === 'detail' && currentDetail) {
+      if (currentDetail.type === 'tweet') {
+        return (
+          <TweetDetailScreen
+            tweetId={currentDetail.tweet.id}
+            onBack={handleBackFromDetail}
+            onSelectTweet={openTweetDetail}
+            onOpenProfile={openAuthorProfile}
+            initialTweet={currentDetail.tweet}
+          />
+        );
+      }
+
       return (
-        <TweetDetailScreen
-          tweetId={currentDetail.id}
+        <AuthorProfileScreen
+          handle={currentDetail.handle}
           onBack={handleBackFromDetail}
           onSelectTweet={openTweetDetail}
-          initialTweet={currentDetail.initial}
+          onSelectProfile={openAuthorProfile}
         />
       );
     }
 
     const Component = navigationScreens[activeScreen as NavScreenKey].Component;
     if (activeScreen === 'feed') {
-      return <Component onSelectTweet={openTweetDetail} />;
+      return <Component onSelectTweet={openTweetDetail} onSelectProfile={openAuthorProfile} />;
     }
     return <Component />;
   };
@@ -77,7 +97,7 @@ function App() {
               <button
                 key={key}
                 className={
-                  key === (activeScreen === 'tweetDetail' ? lastNavScreen : activeScreen)
+                  key === (activeScreen === 'detail' ? lastNavScreen : activeScreen)
                     ? 'nav-button nav-button--active'
                     : 'nav-button'
                 }

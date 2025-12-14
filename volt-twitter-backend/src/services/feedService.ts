@@ -1,19 +1,33 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, User as PrismaUser } from '@prisma/client';
 import prisma from '../lib/prisma';
-import { NotificationResponse, PostResponse, ProfileResponse, TrendTopic, User } from '../models';
+import { AuthorProfileResponse, NotificationResponse, PostResponse, ProfileResponse, TrendTopic, User } from '../models';
 
+type UserWithCounts = PrismaUser & { _count?: { followers: number; following: number } };
 type PostWithAuthor = Prisma.PostGetPayload<{ include: { author: true } }>;
 type NotificationWithUser = Prisma.NotificationGetPayload<{ include: { relatedUser: true } }>;
 type ProfileWithRelations = Prisma.ProfileGetPayload<{
-  include: { user: true; pinnedPost: { include: { author: true } } };
+  include: {
+    user: {
+      include: {
+        _count: {
+          select: { followers: true, following: true };
+        };
+      };
+    };
+    pinnedPost: { include: { author: true } };
+  };
 }>;
 
-const mapUser = (user: Prisma.User): User => ({
+const mapUser = (user: UserWithCounts): User => ({
   id: user.id,
   handle: user.handle,
   displayName: user.displayName,
   avatar: user.avatar,
   tagline: user.tagline,
+  bio: user.bio,
+  location: user.location,
+  followers: user._count?.followers,
+  following: user._count?.following,
 });
 
 const mapPost = (post: PostWithAuthor): PostResponse => ({
@@ -25,7 +39,7 @@ const mapPost = (post: PostWithAuthor): PostResponse => ({
   reposts: post.reposts,
   isPinned: post.isPinned,
   parentId: post.parentPostId,
-  author: mapUser(post.author),
+  author: mapUser(post.author as UserWithCounts),
 });
 
 const mapPostWithThread = (post: PostWithAuthor, thread: PostResponse[]): PostResponse => ({
@@ -53,17 +67,22 @@ const mapNotification = (notification: NotificationWithUser): NotificationRespon
   relatedUser: mapUser(notification.relatedUser),
 });
 
-const mapProfile = (profile: ProfileWithRelations): ProfileResponse => ({
-  user: mapUser(profile.user),
-  bio: profile.bio,
-  location: profile.location,
-  stats: {
-    followers: profile.followers,
-    following: profile.following,
-    posts: profile.posts,
-  },
-  pinnedPost: profile.pinnedPost ? mapPost(profile.pinnedPost) : undefined,
-});
+const mapProfile = (profile: ProfileWithRelations): ProfileResponse => {
+  const followerCount = profile.user._count?.followers ?? profile.followers;
+  const followingCount = profile.user._count?.following ?? profile.following;
+
+  return {
+    user: mapUser(profile.user as UserWithCounts),
+    bio: profile.bio,
+    location: profile.location,
+    stats: {
+      followers: followerCount,
+      following: followingCount,
+      posts: profile.posts,
+    },
+    pinnedPost: profile.pinnedPost ? mapPost(profile.pinnedPost) : undefined,
+  };
+};
 
 export const getTimeline = async (): Promise<PostResponse[]> => {
   const posts = await prisma.post.findMany({
@@ -111,7 +130,13 @@ export const getTrendingTopics = async (): Promise<TrendTopic[]> => {
 export const getProfile = async (): Promise<ProfileResponse> => {
   const profile = await prisma.profile.findFirst({
     include: {
-      user: true,
+      user: {
+        include: {
+          _count: {
+            select: { followers: true, following: true },
+          },
+        },
+      },
       pinnedPost: { include: { author: true } },
     },
   });
@@ -121,6 +146,39 @@ export const getProfile = async (): Promise<ProfileResponse> => {
   }
 
   return mapProfile(profile);
+};
+
+export const getAuthorProfile = async (identifier: string): Promise<AuthorProfileResponse> => {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [{ handle: identifier }, { id: identifier }],
+    },
+    include: {
+      posts: {
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      _count: {
+        select: { followers: true, following: true },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    user: mapUser(user as UserWithCounts),
+    bio: user.bio,
+    location: user.location,
+    stats: {
+      followers: user._count?.followers ?? 0,
+      following: user._count?.following ?? 0,
+      posts: user.posts.length,
+    },
+    posts: user.posts.map(mapPost),
+  };
 };
 
 const requireProfile = async () => {

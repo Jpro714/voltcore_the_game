@@ -1,6 +1,7 @@
 .tweet-card {
   display: flex;
   gap: 12px;
+  align-items: flex-start;
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 16px;
@@ -32,6 +33,18 @@
   height: 40px;
 }
 
+.tweet-card__avatar-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tweet-card__avatar-button:focus-visible {
+  outline: 2px solid #ffc371;
+  border-radius: 50%;
+}
+
 .tweet-card__avatar {
   width: 48px;
   height: 48px;
@@ -45,16 +58,39 @@
 .tweet-card__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.tweet-card__author-button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  min-width: 0;
+  margin-right: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tweet-card__author-button:focus-visible {
+  outline: 2px solid #ffc371;
+  border-radius: 12px;
 }
 
 .tweet-card__display-name {
   font-weight: 600;
-  margin-right: 8px;
+  display: block;
+  line-height: 1.2;
 }
 
 .tweet-card__handle {
   color: #9aa7c4;
+  font-size: 0.9rem;
 }
 
 .tweet-card__timestamp {

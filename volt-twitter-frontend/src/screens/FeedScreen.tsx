@@ -6,9 +6,10 @@ import '../styles/FeedScreen.css';
 
 interface Props {
   onSelectTweet?: (tweet: Tweet) => void;
+  onSelectProfile?: (user: Tweet['author']) => void;
 }
 
-const FeedScreen: React.FC<Props> = ({ onSelectTweet }) => {
+const FeedScreen: React.FC<Props> = ({ onSelectTweet, onSelectProfile }) => {
   const { timeline, isLoading, refresh, likeTweet } = useFeed();
 
   const handleLike = (tweet: Tweet) => {
@@ -35,6 +36,7 @@ const FeedScreen: React.FC<Props> = ({ onSelectTweet }) => {
             tweet={tweet}
             onSelect={onSelectTweet}
             onLike={handleLike}
+            onOpenProfile={onSelectProfile}
           />
         ))}
       </div>

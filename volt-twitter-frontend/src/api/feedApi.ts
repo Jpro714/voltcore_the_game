@@ -1,5 +1,6 @@
 import { apiRequest, isApiEnabled } from './config';
 import {
+  getMockAuthorProfile,
   getMockTweetWithThread,
   mockNotifications,
   mockProfile,
@@ -9,7 +10,7 @@ import {
   recordMockLike,
   recordMockReply,
 } from '../data/mockFeed';
-import { NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
+import { AuthorProfile, NotificationItem, ProfileSummary, TrendTopic, Tweet } from '../types/feed';
 
 const clone = <T>(input: T): T => JSON.parse(JSON.stringify(input));
 
@@ -119,4 +120,16 @@ export const likeTweet = async (postId: string) => {
     throw new Error('Tweet not found.');
   }
   return fromMock(liked, 150);
+};
+
+export const fetchAuthorProfile = async (handle: string) => {
+  if (isApiEnabled) {
+    return apiRequest<AuthorProfile>(`/api/users/${encodeURIComponent(handle)}`);
+  }
+
+  const fallback = getMockAuthorProfile(handle);
+  if (!fallback) {
+    throw new Error('User not found.');
+  }
+  return fromMock(fallback, 200);
 };

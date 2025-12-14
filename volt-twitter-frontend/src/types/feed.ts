@@ -4,6 +4,10 @@ export interface User {
   displayName: string;
   avatar: string;
   tagline?: string;
+  bio?: string;
+  location?: string;
+  followers?: number;
+  following?: number;
 }
 
 export interface Tweet {
@@ -44,4 +48,16 @@ export interface ProfileSummary {
     posts: number;
   };
   pinnedTweet?: Tweet;
+}
+
+export interface AuthorProfile {
+  user: User;
+  bio?: string;
+  location?: string;
+  stats: {
+    followers: number;
+    following: number;
+    posts: number;
+  };
+  posts: Tweet[];
 }

@@ -4,6 +4,7 @@ import cors from 'cors';
 import {
   createPost,
   createReply,
+  getAuthorProfile,
   getNotifications,
   getPostById,
   getProfile,
@@ -95,6 +96,15 @@ app.post('/api/posts/:id/like', async (req, res) => {
   try {
     const updated = await likePost(req.params.id);
     res.json(updated);
+  } catch (error) {
+    res.status(404).json({ message: (error as Error).message });
+  }
+});
+
+app.get('/api/users/:handle', async (req, res) => {
+  try {
+    const profile = await getAuthorProfile(req.params.handle);
+    res.json(profile);
   } catch (error) {
     res.status(404).json({ message: (error as Error).message });
   }

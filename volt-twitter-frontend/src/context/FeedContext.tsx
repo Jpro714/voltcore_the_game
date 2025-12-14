@@ -36,7 +36,6 @@ export const FeedProvider = ({ children }: FeedProviderProps) => {
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
-  const [viewStack, setViewStack] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);

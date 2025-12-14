@@ -19,9 +19,13 @@ model User {
   displayName   String
   avatar        String
   tagline       String?
+  bio           String?
+  location      String?
   posts         Post[]
   notifications Notification[] @relation("NotificationRelatedUser")
   profile       Profile?
+  followers     Follow[]       @relation("UserFollowers")
+  following     Follow[]       @relation("UserFollowing")
 }
 
 model Post {
@@ -67,4 +71,14 @@ model Profile {
   pinnedPostId String? @unique
   user         User    @relation(fields: [userId], references: [id])
   pinnedPost   Post?   @relation("ProfilePinnedPost", fields: [pinnedPostId], references: [id])
+}
+
+model Follow {
+  id          String @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User   @relation("UserFollowing", fields: [followerId], references: [id])
+  following   User   @relation("UserFollowers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
 }

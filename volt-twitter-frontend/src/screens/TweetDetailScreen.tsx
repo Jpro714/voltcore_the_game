@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import TweetCard from '../components/TweetCard';
 import { fetchPostById } from '../api/feedApi';
 import { useFeed } from '../context/FeedContext';
-import { Tweet } from '../types/feed';
+import { Tweet, User } from '../types/feed';
 import '../styles/TweetDetailScreen.css';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   onBack: () => void;
   onSelectTweet?: (tweet: Tweet) => void;
   initialTweet?: Tweet | null;
+  onOpenProfile?: (user: Tweet['author']) => void;
 }
 
 const insertReplyIntoTree = (node: Tweet, parentId: string, reply: Tweet): Tweet => {
@@ -43,7 +44,7 @@ const updateThreadLike = (nodes: Tweet[] | undefined, updated: Tweet): Tweet[] |
   );
 };
 
-const TweetDetailScreen: React.FC<Props> = ({ tweetId, onBack, onSelectTweet, initialTweet }) => {
+const TweetDetailScreen: React.FC<Props> = ({ tweetId, onBack, onSelectTweet, initialTweet, onOpenProfile }) => {
   const { likeTweet, replyToPost } = useFeed();
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [isLoading, setIsLoading] = useState(!initialTweet);
@@ -143,11 +144,12 @@ const TweetDetailScreen: React.FC<Props> = ({ tweetId, onBack, onSelectTweet, in
             variant="thread"
             onLike={handleLikeThread}
             onSelect={onSelectTweet}
+            onOpenProfile={onOpenProfile}
           />
           {renderThread(reply.thread, depth + 1)}
         </div>
       )),
-    [handleLikeThread, onSelectTweet],
+    [handleLikeThread, onSelectTweet, onOpenProfile],
   );
 
   return (
@@ -160,7 +162,7 @@ const TweetDetailScreen: React.FC<Props> = ({ tweetId, onBack, onSelectTweet, in
       {error && <p className="tweet-detail__status tweet-detail__status--error">{error}</p>}
       {!isLoading && tweet && (
         <>
-          <TweetCard tweet={tweet} onLike={handleLikeRoot} />
+          <TweetCard tweet={tweet} onLike={handleLikeRoot} onOpenProfile={onOpenProfile} />
           <div className="tweet-detail__actions">
             <span>{tweet.likes} Likes</span>
             <span>{tweet.replies} Replies</span>

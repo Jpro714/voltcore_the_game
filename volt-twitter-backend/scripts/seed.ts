@@ -11,6 +11,8 @@ const users = [
     displayName: 'Player One',
     avatar: avatar('player_one'),
     tagline: 'Freelance brand alchemist',
+    bio: 'Prototype handler for Voltcore experiments, documentarian of the neon economy.',
+    location: 'Neon District',
   },
   {
     id: 'voltcore',
@@ -18,6 +20,8 @@ const users = [
     displayName: 'Voltcore Energy',
     avatar: avatar('voltcore_energy'),
     tagline: 'Pure attention in a can.',
+    bio: 'Corporate feed for Voltcore Energy. Expect propaganda and launch hype.',
+    location: 'Skyline Tower',
   },
   {
     id: 'rumor',
@@ -25,6 +29,7 @@ const users = [
     displayName: 'Wiretap Broker',
     avatar: avatar('wiretap_broker'),
     tagline: 'Truth, rumors, assets.',
+    bio: 'Broker of whispers and burner ledgers across Voltcore City.',
   },
   {
     id: 'chemist',
@@ -32,6 +37,7 @@ const users = [
     displayName: 'SynthChem Drip',
     avatar: avatar('synth_chemist'),
     tagline: 'Reverse engineering your caffeine high.',
+    bio: 'Publishing every Voltcore teardown until the solvent fumes win.',
   },
   {
     id: 'journalist',
@@ -39,8 +45,23 @@ const users = [
     displayName: 'Orbital Press',
     avatar: avatar('orbital_press'),
     tagline: 'Broadcasting from the upper stratos.',
+    bio: 'Independent newswire covering mood-hacking scandals and council probes.',
   },
 ];
+
+const followPairs = [
+  { followerId: 'player', followingId: 'voltcore' },
+  { followerId: 'player', followingId: 'rumor' },
+  { followerId: 'player', followingId: 'chemist' },
+  { followerId: 'rumor', followingId: 'voltcore' },
+  { followerId: 'chemist', followingId: 'voltcore' },
+  { followerId: 'journalist', followingId: 'voltcore' },
+  { followerId: 'journalist', followingId: 'rumor' },
+  { followerId: 'voltcore', followingId: 'rumor' },
+];
+
+const followerCount = (userId: string) => followPairs.filter((pair) => pair.followingId === userId).length;
+const followingCount = (userId: string) => followPairs.filter((pair) => pair.followerId === userId).length;
 
 const basePosts = [
   {
@@ -182,6 +203,7 @@ const seed = async () => {
   await prisma.notification.deleteMany();
   await prisma.trendingTopic.deleteMany();
   await prisma.profile.deleteMany();
+  await prisma.follow.deleteMany();
   await prisma.post.deleteMany();
   await prisma.user.deleteMany();
 
@@ -189,6 +211,7 @@ const seed = async () => {
   await prisma.post.createMany({ data: posts });
   await prisma.notification.createMany({ data: notifications });
   await prisma.trendingTopic.createMany({ data: trendingTopics });
+  await prisma.follow.createMany({ data: followPairs });
 
   await prisma.profile.create({
     data: {
@@ -196,8 +219,8 @@ const seed = async () => {
       userId: 'player',
       bio: 'Prototype handler for Voltcore experiments. Documenting everything.',
       location: 'Neon District',
-      followers: 1580,
-      following: 403,
+      followers: followerCount('player'),
+      following: followingCount('player'),
       posts: posts.filter((post) => post.authorId === 'player').length,
       pinnedPostId: 'tw-5',
     },

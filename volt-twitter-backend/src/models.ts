@@ -4,6 +4,10 @@ export interface User {
   displayName: string;
   avatar: string;
   tagline?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  followers?: number;
+  following?: number;
 }
 
 export interface PostResponse {
@@ -44,4 +48,16 @@ export interface ProfileResponse {
     posts: number;
   };
   pinnedPost?: PostResponse;
+}
+
+export interface AuthorProfileResponse {
+  user: User;
+  bio?: string | null;
+  location?: string | null;
+  stats: {
+    followers: number;
+    following: number;
+    posts: number;
+  };
+  posts: PostResponse[];
 }
