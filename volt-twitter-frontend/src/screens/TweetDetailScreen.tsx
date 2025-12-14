@@ -163,11 +163,6 @@ const TweetDetailScreen: React.FC<Props> = ({ tweetId, onBack, onSelectTweet, in
       {!isLoading && tweet && (
         <>
           <TweetCard tweet={tweet} onLike={handleLikeRoot} onOpenProfile={onOpenProfile} />
-          <div className="tweet-detail__actions">
-            <span>{tweet.likes} Likes</span>
-            <span>{tweet.replies} Replies</span>
-          </div>
-
           <form className="tweet-detail__reply" onSubmit={handleReply}>
             <div className="tweet-detail__reply-target">
               Replying to <strong>{replyTargetHandle}</strong>

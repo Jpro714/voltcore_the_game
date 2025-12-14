@@ -85,8 +85,16 @@ const mapProfile = (profile: ProfileWithRelations): ProfileResponse => {
 };
 
 export const getTimeline = async (): Promise<PostResponse[]> => {
+  const profile = await requireProfile();
+  const following = await prisma.follow.findMany({
+    where: { followerId: profile.userId },
+    select: { followingId: true },
+  });
+  const authorIds = new Set<string>([profile.userId]);
+  following.forEach((entry) => authorIds.add(entry.followingId));
+
   const posts = await prisma.post.findMany({
-    where: { parentPostId: null },
+    where: { parentPostId: null, authorId: { in: Array.from(authorIds) } },
     include: { author: true },
     orderBy: { createdAt: 'desc' },
   });

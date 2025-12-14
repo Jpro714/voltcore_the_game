@@ -176,6 +176,13 @@ const mockReplies: Tweet[] = [
 ];
 
 const getPostsByUser = (userId: string) => [...mockTimeline, ...mockReplies].filter((tweet) => tweet.author.id === userId);
+const getFollowingIdsForPlayer = () =>
+  mockFollowPairs.filter((pair) => pair.followerId === playerUser.id).map((pair) => pair.followingId);
+
+export const getMockFollowingTimeline = (): Tweet[] => {
+  const allowedAuthorIds = new Set<string>([playerUser.id, ...getFollowingIdsForPlayer()]);
+  return mockTimeline.filter((tweet) => allowedAuthorIds.has(tweet.author.id));
+};
 
 export const mockNotifications: NotificationItem[] = [
   {

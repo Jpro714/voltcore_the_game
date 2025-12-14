@@ -5,6 +5,7 @@ import {
   getMockAuthorProfile,
   getMockFollowers,
   getMockFollowing,
+  getMockFollowingTimeline,
   getMockTweetWithThread,
   mockNotifications,
   mockTimeline,
@@ -33,7 +34,7 @@ const fallbackFetch = async <T>(request: () => Promise<T>, fallbackValue: T, del
 };
 
 export const fetchTimeline = () =>
-  fallbackFetch<Tweet[]>(() => apiRequest<Tweet[]>('/api/timeline'), mockTimeline, 350);
+  fallbackFetch<Tweet[]>(() => apiRequest<Tweet[]>('/api/timeline'), getMockFollowingTimeline(), 350);
 
 export const fetchNotifications = () =>
   fallbackFetch<NotificationItem[]>(() => apiRequest<NotificationItem[]>('/api/notifications'), mockNotifications);
