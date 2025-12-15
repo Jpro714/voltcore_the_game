@@ -165,6 +165,50 @@
   font-size: 0.85rem;
 }
 
+.cadence-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.cadence-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: #8aa0d5;
+}
+
+.cadence-controls input {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 7, 12, 0.8);
+  color: #f4f6ff;
+  width: 120px;
+}
+
+.cadence-controls button {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 600;
+  color: #0a101b;
+  background: linear-gradient(120deg, #53ffd1, #2ec8ff);
+}
+
+.cadence-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cadence-error {
+  color: #ff9ea8;
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
 .status-pill {
   border-radius: 999px;
   padding: 2px 12px;
@@ -269,6 +313,20 @@
   color: #7e90bd;
   font-size: 0.85rem;
   margin-top: 6px;
+}
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-detail__label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7f8fbf;
+  margin: 4px 0;
 }
 
 .detail-footer {

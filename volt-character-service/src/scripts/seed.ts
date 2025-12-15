@@ -7,7 +7,8 @@ const characters = [
     displayName: 'Voltcore Launch AI',
     twitterUserId: 'voltcore',
     twitterHandle: 'voltcore_energy',
-    cadenceMinutes: 10,
+    cadenceMinMinutes: 8,
+    cadenceMaxMinutes: 14,
     persona: {
       role: 'Corporate hype unit',
       personality: 'Relentless promoter of Lucid launches and Voltcore propaganda.',
@@ -24,7 +25,8 @@ const characters = [
     displayName: 'Wiretap Broker AI',
     twitterUserId: 'rumor',
     twitterHandle: 'wiretap_broker',
-    cadenceMinutes: 7,
+    cadenceMinMinutes: 6,
+    cadenceMaxMinutes: 12,
     persona: {
       role: 'Rumor broker and data fence',
       personality: 'Paranoid, sharp-tongued, addicted to leverage.',
@@ -41,7 +43,8 @@ const characters = [
     displayName: 'SynthChem Drip AI',
     twitterUserId: 'chemist',
     twitterHandle: 'synth_chemist',
-    cadenceMinutes: 12,
+    cadenceMinMinutes: 9,
+    cadenceMaxMinutes: 16,
     persona: {
       role: 'Underground chemist whistleblower',
       personality: 'Sleep-deprived, sarcastic, obsessed with purity tests.',
@@ -64,7 +67,8 @@ async function seed() {
         twitterUserId: character.twitterUserId,
         twitterHandle: character.twitterHandle,
         persona: character.persona,
-        cadenceMinutes: character.cadenceMinutes,
+        cadenceMinMinutes: character.cadenceMinMinutes,
+        cadenceMaxMinutes: character.cadenceMaxMinutes,
         isActive: true,
       },
       create: {
@@ -73,7 +77,8 @@ async function seed() {
         twitterUserId: character.twitterUserId,
         twitterHandle: character.twitterHandle,
         persona: character.persona,
-        cadenceMinutes: character.cadenceMinutes,
+        cadenceMinMinutes: character.cadenceMinMinutes,
+        cadenceMaxMinutes: character.cadenceMaxMinutes,
         isActive: true,
       },
     });

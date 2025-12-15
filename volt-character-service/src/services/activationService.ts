@@ -47,7 +47,13 @@ export const getActivationBundle = async (characterId: string): Promise<Activati
 
 export const recordActivation = async (
   characterId: string,
-  data: { state?: { currentSituation?: string | null; workingMemory?: string | null; nextActivationAt?: string | null }; actions?: unknown; summary?: string },
+  data: {
+    state?: { currentSituation?: string | null; workingMemory?: string | null; nextActivationAt?: string | null };
+    actions?: unknown;
+    summary?: string;
+    inputContext?: unknown;
+    inputBundle?: unknown;
+  },
 ) => {
   const character = await prisma.character.findUnique({ where: { id: characterId }, include: { state: true } });
   if (!character) {
@@ -85,6 +91,8 @@ export const recordActivation = async (
         characterId: character.id,
         actions: actionsPayload,
         summary: data.summary,
+        inputContext: data.inputContext as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
+        inputBundle: data.inputBundle as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
       },
     });
   });

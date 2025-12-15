@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../lib/prisma.js';
 import { getActivationBundle, recordActivation } from '../services/activationService.js';
 import { runCharacterActivation } from '../services/activationRunner.js';
+import { enqueuePingForHandle } from '../services/pingService.js';
 
 const router = Router();
 
@@ -14,9 +15,14 @@ router.get('/', async (_req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { handle, displayName, twitterUserId, twitterHandle, persona, cadenceMinutes } = req.body;
+  const { handle, displayName, twitterUserId, twitterHandle, persona, cadenceMinMinutes, cadenceMaxMinutes } = req.body;
   if (!handle || !displayName || !twitterUserId || !twitterHandle) {
     return res.status(400).json({ message: 'handle, displayName, twitterUserId, and twitterHandle are required' });
+  }
+  const min = Number.isFinite(cadenceMinMinutes) ? Number(cadenceMinMinutes) : 5;
+  const max = Number.isFinite(cadenceMaxMinutes) ? Number(cadenceMaxMinutes) : 15;
+  if (min <= 0 || max <= 0 || min > max) {
+    return res.status(400).json({ message: 'cadence values must be positive and min <= max' });
   }
 
   const character = await prisma.character.create({
@@ -26,10 +32,54 @@ router.post('/', async (req, res) => {
       twitterUserId,
       twitterHandle,
       persona: persona ?? {},
-      cadenceMinutes: cadenceMinutes ?? null,
+      cadenceMinMinutes: min,
+      cadenceMaxMinutes: max,
     },
   });
   res.status(201).json(character);
+});
+
+router.put('/:id', async (req, res) => {
+  const { cadenceMinMinutes, cadenceMaxMinutes, isActive } = req.body ?? {};
+  const character = await prisma.character.findUnique({ where: { id: req.params.id } });
+  if (!character) {
+    return res.status(404).json({ message: 'Character not found' });
+  }
+
+  let min = character.cadenceMinMinutes ?? 5;
+  let max = character.cadenceMaxMinutes ?? 15;
+  if (cadenceMinMinutes !== undefined) {
+    min = Number(cadenceMinMinutes);
+  }
+  if (cadenceMaxMinutes !== undefined) {
+    max = Number(cadenceMaxMinutes);
+  }
+  if (min <= 0 || max <= 0 || min > max) {
+    return res.status(400).json({ message: 'cadence values must be positive and min <= max' });
+  }
+
+  const update = await prisma.character.update({
+    where: { id: character.id },
+    data: {
+      cadenceMinMinutes: min,
+      cadenceMaxMinutes: max,
+      isActive: typeof isActive === 'boolean' ? isActive : character.isActive,
+    },
+  });
+
+  res.json(update);
+});
+
+router.post('/pings', async (req, res) => {
+  const { handle, type, payload } = req.body ?? {};
+  if (!handle || !type) {
+    return res.status(400).json({ message: 'handle and type are required' });
+  }
+  const success = await enqueuePingForHandle(handle, type, payload ?? {});
+  if (!success) {
+    return res.status(404).json({ message: 'Character not found for handle' });
+  }
+  res.status(204).send();
 });
 
 router.get('/:id', async (req, res) => {
@@ -61,6 +111,8 @@ router.get('/:id/activations', async (req, res) => {
       occurredAt: entry.occurredAt,
       summary: entry.summary,
       actions: entry.actions,
+      inputContext: entry.inputContext,
+      inputBundle: entry.inputBundle,
     })),
   );
 });

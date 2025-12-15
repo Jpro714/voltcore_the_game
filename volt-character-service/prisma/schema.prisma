@@ -14,10 +14,12 @@ model Character {
   twitterUserId     String
   twitterHandle     String
   persona           Json
-  cadenceMinutes    Int?
+  cadenceMinMinutes Int?
+  cadenceMaxMinutes Int?
   isActive          Boolean               @default(true)
   state             CharacterState?
   activations       CharacterActivation[]
+  pings             CharacterPing[]
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
 }
@@ -38,9 +40,22 @@ model CharacterActivation {
   characterId  String
   occurredAt   DateTime  @default(now())
   inputContext Json?
+  inputBundle  Json?
   actions      Json?
   summary      String?
   character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId, occurredAt])
+}
+
+model CharacterPing {
+  id          String    @id @default(uuid())
+  characterId String
+  type        String
+  payload     Json
+  createdAt   DateTime  @default(now())
+  consumedAt  DateTime?
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, createdAt])
 }

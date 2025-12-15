@@ -227,9 +227,11 @@ The `volt-twitter-backend` directory houses a lightweight Express + TypeScript A
 
 1. `cd volt-twitter-backend`
 2. `cp .env.example .env` and edit `DATABASE_URL` for your Postgres instance
+   - Set `CHARACTER_SERVICE_BASE_URL` to the character service origin (e.g., `http://localhost:4100`) so backend events can enqueue pings.
 3. `npm install`
-4. Bootstrap the database (create DB if missing, run migrations, seed demo data): `npm run db:bootstrap`
-   - This script calls `scripts/setup_local_db.sh`, applies all Prisma migrations, then runs the seed script.
+4. Bootstrap the shared Postgres database (creates DB, runs both backend + character migrations, seeds demo data): `npm run db:bootstrap`
+   - Under the hood this delegates to `scripts/bootstrap_stack.sh`, so you can also run `./scripts/bootstrap_stack.sh` from the repo root if you prefer.
+   - All Prisma migrations and seeders for both services run in one shot, so you no longer need to manually invoke the character-service migration command after pulling schema changes.
 5. Start the dev server: `npm run dev` (watches files with `ts-node-dev`)
 6. Production build uses `npm run build` + `npm start`
 
@@ -285,6 +287,7 @@ Run it with:
 3. `npm install`
 4. `npx prisma migrate dev --name init` (or `npm run prisma:migrate`)
 5. `npm run dev` (server runs on `http://localhost:4100`)
+   - After schema updates (cadence ranges, ping queue), re-run `npm run prisma:migrate` to apply migrations.
 
 Key endpoints:
 - `GET /characters`, `POST /characters`, `GET /characters/:id` – manage personas mapped to Twitter handles.
@@ -293,7 +296,8 @@ Key endpoints:
 - `POST /characters/:id/activation/commit` – records activation outcomes (actions JSON + summary) and updates scheduling/state.
 - `GET /characters/:id/activations?limit=5` – fetch recent activation summaries + action payloads for dashboard/debugging.
 
-- The worker in `src/workers/scheduler.ts` selects eligible characters (based on `nextActivationAt`), requests an activation bundle, calls the configured LLM provider, executes the returned actions by hitting the backend’s internal endpoints (post/reply/DM/like), and records both the decision and execution results for observability. Hook this up to cron/queues later to implement the probabilistic “wake up” loop.
+- The worker in `src/workers/scheduler.ts` selects eligible characters or consumes pending pings (mentions/DMs), requests an activation bundle, calls the configured LLM provider, executes the returned actions by hitting the backend’s internal endpoints (post/reply/DM/like), and records both the decision and execution results for observability. Hook this up to cron/queues later to implement the probabilistic “wake up” loop.
+- Cadence is randomized between per-character min/max values (editable from the dashboard) unless the LLM specifies the next activation time explicitly. Pings bypass the normal feed and deliver focused context to the model.
 
 #### LLM provider configuration
 
@@ -313,4 +317,4 @@ Run it with:
 3. `npm install`
 4. `npm run dev` (served on `http://localhost:5174` by default)
 
-The dashboard lists each persona, shows its current/next activation windows, recent memory, and lets you drill into a character to inspect detailed activation history (including the structured action payloads) or trigger manual activations using the same bundle/commit endpoints as the worker.
+The dashboard lists each persona, shows its current/next activation windows, recent memory, and lets you drill into a character to inspect detailed activation history (including the structured action payloads). You can trigger manual activations (which now run the full LLM + execution loop) and tune each character’s randomized activation window directly from the UI.

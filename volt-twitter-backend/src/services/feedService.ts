@@ -1,6 +1,7 @@
 import { Prisma, User as PrismaUser } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { AuthorProfileResponse, NotificationResponse, PostResponse, ProfileResponse, TrendTopic, User } from '../models';
+import { sendCharacterPing } from './characterPingClient';
 
 type UserWithCounts = PrismaUser & { _count?: { followers: number; following: number } };
 type PostWithAuthor = Prisma.PostGetPayload<{ include: { author: true } }>;
@@ -251,7 +252,9 @@ export const createPost = async (content: string): Promise<PostResponse> => {
     }),
   ]);
 
-  return mapPost(newPost);
+  const postResponse = mapPost(newPost);
+  await notifyMentionedCharacters(postResponse, postResponse.content);
+  return postResponse;
 };
 
 export const createReply = async (postId: string, content: string): Promise<PostResponse> => {
@@ -260,7 +263,7 @@ export const createReply = async (postId: string, content: string): Promise<Post
     throw new Error('Reply content cannot be empty');
   }
 
-  const parent = await prisma.post.findUnique({ where: { id: postId } });
+  const parent = await prisma.post.findUnique({ where: { id: postId }, include: { author: true } });
   if (!parent) {
     throw new Error('Parent post not found');
   }
@@ -286,7 +289,10 @@ export const createReply = async (postId: string, content: string): Promise<Post
     }),
   ]);
 
-  return mapPost(reply);
+  const replyResponse = mapPost(reply);
+  await notifyMentionedCharacters(replyResponse, replyResponse.content);
+  await notifyParentAuthorOfReply(parent, replyResponse);
+  return replyResponse;
 };
 
 export const likePost = async (postId: string): Promise<PostResponse> => {
@@ -314,7 +320,9 @@ export const createPostForUser = async (identifier: string, content: string): Pr
     include: { author: true },
   });
 
-  return mapPost(newPost);
+  const postResponse = mapPost(newPost);
+  await notifyMentionedCharacters(postResponse, postResponse.content);
+  return postResponse;
 };
 
 export const createReplyForUser = async (identifier: string, postId: string, content: string): Promise<PostResponse> => {
@@ -323,7 +331,7 @@ export const createReplyForUser = async (identifier: string, postId: string, con
     throw new Error('Reply content cannot be empty');
   }
 
-  const parent = await prisma.post.findUnique({ where: { id: postId } });
+  const parent = await prisma.post.findUnique({ where: { id: postId }, include: { author: true } });
   if (!parent) {
     throw new Error('Parent post not found');
   }
@@ -345,7 +353,10 @@ export const createReplyForUser = async (identifier: string, postId: string, con
     }),
   ]);
 
-  return mapPost(reply);
+  const replyResponse = mapPost(reply);
+  await notifyMentionedCharacters(replyResponse, replyResponse.content);
+  await notifyParentAuthorOfReply(parent, replyResponse);
+  return replyResponse;
 };
 
 const findUserByIdentifier = (identifier: string) =>
@@ -418,6 +429,102 @@ const includeUserCounts = {
   _count: {
     select: { followers: true, following: true },
   },
+};
+
+const extractMentionedHandles = (content: string) => {
+  const matches = content.match(/@([a-zA-Z0-9_]+)/g) ?? [];
+  return Array.from(new Set(matches.map((match) => match.slice(1))));
+};
+
+const notifyMentionedCharacters = async (post: PostResponse, content: string) => {
+  const handles = extractMentionedHandles(content);
+  if (handles.length === 0) {
+    return;
+  }
+  await Promise.all(
+    handles.map((handle) =>
+      sendCharacterPing({
+        handle,
+        type: 'mention',
+        payload: {
+          sourceHandle: post.author.handle,
+          content: post.content,
+          postId: post.id,
+        },
+      }),
+    ),
+  );
+};
+
+type ThreadContextNode = {
+  id: string;
+  authorHandle: string;
+  content: string;
+};
+
+const buildThreadContext = async (postId: string): Promise<{ depth: number; history: ThreadContextNode[] }> => {
+  const history: ThreadContextNode[] = [];
+  let currentId: string | null = postId;
+
+  while (currentId) {
+    const entry = (await prisma.post.findUnique({
+      where: { id: currentId },
+      select: {
+        id: true,
+        content: true,
+        parentPostId: true,
+        author: { select: { handle: true } },
+      },
+    })) as { id: string; content: string; parentPostId: string | null; author: { handle: string } } | null;
+
+    if (!entry) {
+      break;
+    }
+
+    history.push({
+      id: entry.id,
+      content: entry.content,
+      authorHandle: entry.author.handle,
+    });
+
+    if (!entry.parentPostId) {
+      break;
+    }
+
+    currentId = entry.parentPostId;
+
+    if (history.length >= 10) {
+      break;
+    }
+  }
+
+  return {
+    depth: Math.max(history.length - 1, 0),
+    history: history.reverse(),
+  };
+};
+
+const notifyParentAuthorOfReply = async (parent: PostWithAuthor, reply: PostResponse) => {
+  const parentHandle = parent.author?.handle;
+  if (!parentHandle || parentHandle === reply.author.handle) {
+    return;
+  }
+
+  const threadContext = await buildThreadContext(reply.id);
+
+  await sendCharacterPing({
+    handle: parentHandle,
+    type: 'reply',
+    payload: {
+      parentPostId: parent.id,
+      parentContent: parent.content,
+      replyPostId: reply.id,
+      replyContent: reply.content,
+      replyAuthorHandle: reply.author.handle,
+      threadDepth: threadContext.depth,
+      threadHistory: threadContext.history,
+    },
+  });
 };
 
 export const getFollowersForUser = async (identifier: string): Promise<User[]> => {

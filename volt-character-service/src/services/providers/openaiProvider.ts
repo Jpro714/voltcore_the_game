@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { LLMProvider } from '../llmProvider.js';
-import { ActivationBundle, ActivationDecision, CharacterActionType } from '../../types.js';
+import { ActivationBundle, ActivationDecision, CharacterActionType, PingContext } from '../../types.js';
 
 const actionTypes: CharacterActionType[] = ['post', 'reply', 'dm', 'like', 'noop'];
 
@@ -31,6 +31,26 @@ const activationSchema = {
   additionalProperties: false,
 };
 
+const describePingGuidance = (ping?: PingContext) => {
+  if (!ping) {
+    return '';
+  }
+
+  if (ping.type === 'reply') {
+    const payload = ping.payload ?? {};
+    const depthValue =
+      payload && typeof payload === 'object' ? (payload as Record<string, unknown>)['threadDepth'] : undefined;
+    const depth = typeof depthValue === 'number' ? depthValue : Number(depthValue ?? 0);
+    return `This ping is a reply inside a thread depth of ${depth}. Review the provided threadHistory before acting. The deeper the thread, the less obligated you are to respond—once depth reaches 2 or more, default to "noop" unless the new message demands it, to avoid endless back-and-forth.`;
+  }
+
+  if (ping.type === 'dm') {
+    return 'This ping is a direct message; respond privately only if you have something meaningful to add.';
+  }
+
+  return 'This ping is a public mention; consider a brief reply if it adds value.';
+};
+
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI;
   private model: string;
@@ -59,8 +79,14 @@ export class OpenAIProvider implements LLMProvider {
       input: [
         {
           role: 'system',
-          content:
-            `You simulate autonomous social media personas living in the Voltcore universe. Your handle is ${bundle.handle}. Never send direct messages to yourself. Respond ONLY with JSON matching the provided schema. Base decisions on the persona, state, feed, and profile data supplied in the user message.`,
+          content: `You simulate autonomous social media personas living in the Voltcore universe. Your handle is ${
+            bundle.handle
+          }. Never send direct messages to yourself. When "ping" data is present treat it as an urgent summon:
+- type "dm": someone messaged you privately; respond privately if helpful.
+- type "mention": another user tagged you publicly; consider replying on that thread.
+- type "reply": someone replied to one of your posts; evaluate if their message merits a response, do not fall into endless back-and-forth.
+${describePingGuidance(bundle.ping)}
+When a ping exists you may ignore the general feed (the threadHistory will be provided when relevant), and it is acceptable to emit a "noop" action if silence is best. Respond ONLY with JSON matching the provided schema.`,
         },
         {
           role: 'user',
@@ -70,6 +96,7 @@ export class OpenAIProvider implements LLMProvider {
             state: bundle.state,
             feed: bundle.feed,
             profile: bundle.profile,
+            ping: bundle.ping ?? null,
           }),
         },
       ],

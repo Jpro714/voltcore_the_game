@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchCharacters, fetchActivationHistory, triggerActivation } from './api/characters';
+import { fetchCharacters, fetchActivationHistory, triggerActivation, updateCharacterCadence } from './api/characters';
 import { CHARACTER_API_BASE_URL } from './api/client';
 import type { ActivationLog, Character } from './types';
 import './App.css';
@@ -15,6 +15,15 @@ const formatTimestamp = (value?: string | null) => {
   return date.toLocaleString();
 };
 
+const stringifyForDisplay = (value: unknown, fallback: string) => {
+  const payload = value === undefined || value === null ? { note: fallback } : value;
+  try {
+    return JSON.stringify(payload, null, 2);
+  } catch {
+    return fallback;
+  }
+};
+
 function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +35,8 @@ function App() {
   const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
   const [expandedActivations, setExpandedActivations] = useState<Record<string, boolean>>({});
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [cadenceDraft, setCadenceDraft] = useState<{ min: number; max: number }>({ min: 5, max: 15 });
+  const [savingCadence, setSavingCadence] = useState(false);
 
   const loadCharacters = useCallback(async () => {
     if (!CHARACTER_API_BASE_URL) {
@@ -115,9 +126,47 @@ function App() {
   const selectedCharacter = selectedCharacterId ? characters.find((character) => character.id === selectedCharacterId) : null;
   const selectedHistory = selectedCharacterId ? historyByCharacter[selectedCharacterId] ?? [] : [];
 
+  useEffect(() => {
+    if (selectedCharacter) {
+      setCadenceDraft({
+        min: selectedCharacter.cadenceMinMinutes ?? 5,
+        max: selectedCharacter.cadenceMaxMinutes ?? 15,
+      });
+    }
+  }, [selectedCharacter]);
+
   const toggleActivation = useCallback((activationId: string) => {
     setExpandedActivations((prev) => ({ ...prev, [activationId]: !prev[activationId] }));
   }, []);
+
+  const handleCadenceChange = (field: 'min' | 'max', value: number) => {
+    setCadenceDraft((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const cadenceDirty =
+    selectedCharacter &&
+    (cadenceDraft.min !== (selectedCharacter.cadenceMinMinutes ?? 5) ||
+      cadenceDraft.max !== (selectedCharacter.cadenceMaxMinutes ?? 15));
+
+  const cadenceInvalid = cadenceDraft.min <= 0 || cadenceDraft.max <= 0 || cadenceDraft.min > cadenceDraft.max;
+
+  const saveCadence = useCallback(async () => {
+    if (!selectedCharacter || cadenceInvalid || !cadenceDirty) {
+      return;
+    }
+    setSavingCadence(true);
+    try {
+      await updateCharacterCadence(selectedCharacter.id, {
+        cadenceMinMinutes: cadenceDraft.min,
+        cadenceMaxMinutes: cadenceDraft.max,
+      });
+      await loadCharacters();
+    } catch (err) {
+      console.error('Failed to update cadence', err);
+    } finally {
+      setSavingCadence(false);
+    }
+  }, [cadenceDraft, cadenceDirty, cadenceInvalid, loadCharacters, selectedCharacter]);
 
   const renderDetail = useCallback(() => {
     if (!selectedCharacter) {
@@ -142,6 +191,34 @@ function App() {
           {selectedCharacter.persona?.interests && selectedCharacter.persona.interests.length > 0 && (
             <p className="muted">Interests: {selectedCharacter.persona.interests.join(', ')}</p>
           )}
+        </section>
+
+        <section className="detail-section">
+          <h3>Activation Cadence (minutes)</h3>
+          <div className="cadence-controls">
+            <label>
+              Min
+              <input
+                type="number"
+                min={1}
+                value={cadenceDraft.min}
+                onChange={(event) => handleCadenceChange('min', Number(event.target.value))}
+              />
+            </label>
+            <label>
+              Max
+              <input
+                type="number"
+                min={1}
+                value={cadenceDraft.max}
+                onChange={(event) => handleCadenceChange('max', Number(event.target.value))}
+              />
+            </label>
+            <button type="button" onClick={saveCadence} disabled={!cadenceDirty || cadenceInvalid || savingCadence}>
+              {savingCadence ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+          {cadenceInvalid && <p className="cadence-error">Min must be less than or equal to Max and both must be positive.</p>}
         </section>
 
         <section className="detail-grid">
@@ -193,7 +270,26 @@ function App() {
                     <span>{expandedActivations[entry.id] ? 'Hide' : 'View'}</span>
                   </button>
                   {expandedActivations[entry.id] && (
-                    <pre className="history-actions">{JSON.stringify(entry.actions, null, 2)}</pre>
+                    <div className="history-detail">
+                      <div>
+                        <div className="history-detail__label">Activation Input</div>
+                        <pre className="history-actions">
+                          {stringifyForDisplay(entry.inputBundle, 'No activation payload captured.')}
+                        </pre>
+                      </div>
+                      <div>
+                        <div className="history-detail__label">Ping Context</div>
+                        <pre className="history-actions">
+                          {stringifyForDisplay(entry.inputContext, 'No ping context provided.')}
+                        </pre>
+                      </div>
+                      <div>
+                        <div className="history-detail__label">Actions</div>
+                        <pre className="history-actions">
+                          {stringifyForDisplay(entry.actions, 'No actions were returned.')}
+                        </pre>
+                      </div>
+                    </div>
                   )}
                 </li>
               ))}
@@ -212,14 +308,21 @@ function App() {
     );
   }, [
     activating,
+    cadenceDirty,
+    cadenceDraft.max,
+    cadenceDraft.min,
+    cadenceInvalid,
     expandedActivations,
     handleActivate,
+    handleCadenceChange,
     historyLoading,
     loadHistory,
     logMessages,
     personaSummary,
+    saveCadence,
     selectedCharacter,
     selectedHistory,
+    savingCadence,
     toggleActivation,
   ]);
 

@@ -5,6 +5,11 @@ export interface Persona {
   tone?: string;
 }
 
+export interface PingContext {
+  type: 'mention' | 'dm' | 'reply';
+  payload: Record<string, unknown>;
+}
+
 export interface ActivationBundle {
   characterId: string;
   handle: string;
@@ -16,6 +21,7 @@ export interface ActivationBundle {
   };
   feed: unknown;
   profile: unknown;
+  ping?: PingContext;
 }
 
 export type CharacterActionType = 'post' | 'reply' | 'dm' | 'like' | 'noop';

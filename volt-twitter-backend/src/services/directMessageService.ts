@@ -7,6 +7,7 @@ import {
   User,
 } from '../models';
 import { requireProfile } from './feedService';
+import { sendCharacterPing } from './characterPingClient';
 
 type DirectMessageWithUsers = Prisma.DirectMessageGetPayload<{ include: { sender: true; recipient: true } }>;
 
@@ -136,7 +137,20 @@ export const sendDirectMessage = async (identifier: string, content: string): Pr
     include: { sender: true, recipient: true },
   });
 
-  return mapMessage(message, viewerId);
+  const response = mapMessage(message, viewerId);
+  console.log(
+    `[dm] viewer @${message.sender.handle} -> @${message.recipient.handle} (${message.id}) queued for character service`,
+  );
+  await sendCharacterPing({
+    handle: message.recipient.handle,
+    type: 'dm',
+    payload: {
+      senderHandle: message.sender.handle,
+      content: message.content,
+      messageId: message.id,
+    },
+  });
+  return response;
 };
 
 export const sendDirectMessageAsUser = async (
@@ -165,5 +179,16 @@ export const sendDirectMessageAsUser = async (
     include: { sender: true, recipient: true },
   });
 
-  return mapMessage(message, sender.id);
+  const response = mapMessage(message, sender.id);
+  console.log(`[dm] @${sender.handle} -> @${recipient.handle} (${message.id}) queued for character service`);
+  await sendCharacterPing({
+    handle: recipient.handle,
+    type: 'dm',
+    payload: {
+      senderHandle: sender.handle,
+      content: message.content,
+      messageId: message.id,
+    },
+  });
+  return response;
 };

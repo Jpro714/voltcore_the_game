@@ -22,24 +22,12 @@ export interface Character {
   twitterUserId: string;
   twitterHandle: string;
   persona?: Persona | null;
-  cadenceMinutes?: number | null;
+  cadenceMinMinutes?: number | null;
+  cadenceMaxMinutes?: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   state?: CharacterState | null;
-}
-
-export interface ActivationBundle {
-  characterId: string;
-  handle: string;
-  persona: Persona;
-  state: {
-    currentSituation?: string | null;
-    workingMemory?: string | null;
-    lastActivationAt?: string | null;
-  };
-  feed: unknown;
-  profile: unknown;
 }
 
 export interface ActivationLog {
@@ -47,4 +35,6 @@ export interface ActivationLog {
   occurredAt: string;
   summary?: string | null;
   actions?: unknown;
+  inputContext?: unknown;
+  inputBundle?: unknown;
 }
