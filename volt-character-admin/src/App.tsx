@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchCharacters, requestActivationBundle, commitActivation, fetchActivationHistory } from './api/characters';
+import { fetchCharacters, fetchActivationHistory, triggerActivation } from './api/characters';
 import { CHARACTER_API_BASE_URL } from './api/client';
 import type { ActivationLog, Character } from './types';
 import './App.css';
-
-const DEFAULT_CADENCE_MINUTES = 10;
 
 const formatTimestamp = (value?: string | null) => {
   if (!value) {
@@ -86,19 +84,7 @@ function App() {
       setActivating(character.id);
       setError(null);
       try {
-        const bundle = await requestActivationBundle(character.id);
-        const cadence = character.cadenceMinutes ?? DEFAULT_CADENCE_MINUTES;
-        const nextActivationAt = new Date(Date.now() + cadence * 60 * 1000).toISOString();
-
-        await commitActivation(character.id, {
-          summary: 'Manual activation triggered from control panel',
-          state: {
-            currentSituation: bundle.state?.currentSituation ?? character.state?.currentSituation ?? null,
-            workingMemory: bundle.state?.workingMemory ?? character.state?.workingMemory ?? null,
-            nextActivationAt,
-          },
-        });
-
+        await triggerActivation(character.id);
         setLogMessages((prev) => ({
           ...prev,
           [character.id]: `Activated manually at ${new Date().toLocaleTimeString()}`,

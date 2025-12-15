@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma.js';
 import { getActivationBundle, recordActivation } from '../services/activationService.js';
+import { runCharacterActivation } from '../services/activationRunner.js';
 
 const router = Router();
 
@@ -97,6 +98,15 @@ router.post('/:id/activation/commit', async (req, res) => {
   try {
     await recordActivation(req.params.id, req.body ?? {});
     res.status(204).send();
+  } catch (error) {
+    res.status(404).json({ message: (error as Error).message });
+  }
+});
+
+router.post('/:id/activation/run', async (req, res) => {
+  try {
+    const result = await runCharacterActivation(req.params.id);
+    res.json(result);
   } catch (error) {
     res.status(404).json({ message: (error as Error).message });
   }
