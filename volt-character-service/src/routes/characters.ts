@@ -39,6 +39,31 @@ router.get('/:id', async (req, res) => {
   res.json(character);
 });
 
+router.get('/:id/activations', async (req, res) => {
+  const limit = Number(req.query.limit) || 5;
+  const activations = await prisma.characterActivation.findMany({
+    where: { characterId: req.params.id },
+    orderBy: { occurredAt: 'desc' },
+    take: Math.min(Math.max(limit, 1), 25),
+  });
+
+  if (activations.length === 0) {
+    const exists = await prisma.character.count({ where: { id: req.params.id } });
+    if (exists === 0) {
+      return res.status(404).json({ message: 'Character not found' });
+    }
+  }
+
+  res.json(
+    activations.map((entry) => ({
+      id: entry.id,
+      occurredAt: entry.occurredAt,
+      summary: entry.summary,
+      actions: entry.actions,
+    })),
+  );
+});
+
 router.put('/:id/state', async (req, res) => {
   const { currentSituation, workingMemory, nextActivationAt } = req.body ?? {};
   const character = await prisma.character.findUnique({ where: { id: req.params.id }, include: { state: true } });

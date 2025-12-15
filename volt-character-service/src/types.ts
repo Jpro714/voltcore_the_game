@@ -17,3 +17,21 @@ export interface ActivationBundle {
   feed: unknown;
   profile: unknown;
 }
+
+export type CharacterActionType = 'post' | 'reply' | 'dm' | 'like' | 'noop';
+
+export interface CharacterAction {
+  type: CharacterActionType;
+  content?: string;
+  targetHandle?: string;
+  referencePostId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ActivationDecision {
+  summary: string;
+  currentSituation?: string | null;
+  workingMemory?: string | null;
+  nextActivationMinutes?: number;
+  actions: CharacterAction[];
+}

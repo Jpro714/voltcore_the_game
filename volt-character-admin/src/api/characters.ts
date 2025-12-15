@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import { ActivationBundle, Character } from '../types';
+import { ActivationBundle, ActivationLog, Character } from '../types';
 
 export const fetchCharacters = () => apiRequest<Character[]>('/characters');
 
@@ -22,3 +22,6 @@ export const commitActivation = (id: string, payload: ActivationCommitPayload) =
     body: JSON.stringify(payload),
     skipJson: true,
   });
+
+export const fetchActivationHistory = (id: string, limit = 5) =>
+  apiRequest<ActivationLog[]>(`/characters/${id}/activations?limit=${limit}`);

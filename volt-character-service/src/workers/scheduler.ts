@@ -1,6 +1,11 @@
 import 'dotenv/config';
 import prisma from '../lib/prisma.js';
 import { getActivationBundle, recordActivation } from '../services/activationService.js';
+import { getLLMProvider } from '../services/llmProvider.js';
+import { executeActions } from '../services/actionExecutor.js';
+
+const DEFAULT_CADENCE_MINUTES = 10;
+const llmProvider = getLLMProvider();
 
 async function runOnce() {
   const now = new Date();
@@ -24,14 +29,18 @@ async function runOnce() {
   const bundle = await getActivationBundle(character.id);
   console.log(`Fetched activation bundle for ${bundle.handle}`);
 
+  const decision = await llmProvider.generateActivation(bundle);
+  const actionResults = await executeActions(character.twitterHandle, decision.actions ?? []);
+  const cadenceMinutes = decision.nextActivationMinutes ?? character.cadenceMinutes ?? DEFAULT_CADENCE_MINUTES;
+  const nextActivationAt = cadenceMinutes ? new Date(Date.now() + cadenceMinutes * 60 * 1000).toISOString() : null;
+
   await recordActivation(character.id, {
-    summary: 'placeholder activation - actions not yet implemented',
+    summary: decision.summary,
+    actions: actionResults,
     state: {
-      currentSituation: bundle.state.currentSituation ?? null,
-      workingMemory: bundle.state.workingMemory ?? null,
-      nextActivationAt: character.cadenceMinutes
-        ? new Date(Date.now() + character.cadenceMinutes * 60 * 1000).toISOString()
-        : null,
+      currentSituation: decision.currentSituation ?? bundle.state.currentSituation ?? null,
+      workingMemory: decision.workingMemory ?? bundle.state.workingMemory ?? null,
+      nextActivationAt,
     },
   });
 }

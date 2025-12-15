@@ -3,7 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import {
   createPost,
+  createPostForUser,
   createReply,
+  createReplyForUser,
   followUser,
   getAuthorProfile,
   getFollowersForUser,
@@ -20,6 +22,7 @@ import {
   getConversationSummaries,
   getConversationThread,
   sendDirectMessage,
+  sendDirectMessageAsUser,
 } from './services/directMessageService';
 
 const app = express();
@@ -164,6 +167,45 @@ app.post('/api/direct-messages/conversations/:handle', async (req, res) => {
       return res.status(400).json({ message: 'content must be a string' });
     }
     const message = await sendDirectMessage(req.params.handle, content);
+    res.status(201).json(message);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.post('/internal/characters/:handle/posts', async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'content must be a string' });
+    }
+    const post = await createPostForUser(req.params.handle, content);
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.post('/internal/characters/:handle/posts/:postId/replies', async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'content must be a string' });
+    }
+    const post = await createReplyForUser(req.params.handle, req.params.postId, content);
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+});
+
+app.post('/internal/characters/:handle/direct-messages/:target', async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'content must be a string' });
+    }
+    const message = await sendDirectMessageAsUser(req.params.handle, req.params.target, content);
     res.status(201).json(message);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });

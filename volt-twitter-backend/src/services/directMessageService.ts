@@ -138,3 +138,32 @@ export const sendDirectMessage = async (identifier: string, content: string): Pr
 
   return mapMessage(message, viewerId);
 };
+
+export const sendDirectMessageAsUser = async (
+  senderIdentifier: string,
+  recipientIdentifier: string,
+  content: string,
+): Promise<DirectMessageResponse> => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('Message cannot be empty');
+  }
+
+  const sender = await findUserOrThrow(senderIdentifier);
+  const recipient = await findUserOrThrow(recipientIdentifier);
+
+  if (sender.id === recipient.id) {
+    throw new Error('Cannot send a direct message to yourself');
+  }
+
+  const message = await prisma.directMessage.create({
+    data: {
+      senderId: sender.id,
+      recipientId: recipient.id,
+      content: trimmed,
+    },
+    include: { sender: true, recipient: true },
+  });
+
+  return mapMessage(message, sender.id);
+};

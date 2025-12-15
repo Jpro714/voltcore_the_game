@@ -257,6 +257,9 @@ The API listens on `http://localhost:4000` by default. A `GET /health` endpoint 
 | `GET /api/direct-messages/conversations` | Returns the player’s DM conversation list with the latest message + unread counts. |
 | `GET /api/direct-messages/conversations/:handle` | Fetches the full DM thread between the player and the specified user. |
 | `POST /api/direct-messages/conversations/:handle` | Sends a new DM to the specified user. Body: `{ "content": "..." }`. |
+| `POST /internal/characters/:handle/posts` | Creates a post on behalf of the specified handle (used by the character service). |
+| `POST /internal/characters/:handle/posts/:postId/replies` | Creates a reply to the given post on behalf of the specified handle. |
+| `POST /internal/characters/:handle/direct-messages/:target` | Sends a DM from the specified handle to `:target`. |
 
 Each route reads/writes through Prisma to a Postgres database (see `prisma/schema.prisma`). The ORM keeps relationships aligned with the data contracts the frontend already consumes.
 
@@ -288,8 +291,16 @@ Key endpoints:
 - `PUT /characters/:id/state` – update working memory / next activation metadata.
 - `POST /characters/:id/activation/request` – returns persona + state + Twitter feed/profile slice for the handle.
 - `POST /characters/:id/activation/commit` – records activation outcomes (actions JSON + summary) and updates scheduling/state.
+- `GET /characters/:id/activations?limit=5` – fetch recent activation summaries + action payloads for dashboard/debugging.
 
-- A placeholder worker in `src/workers/scheduler.ts` demonstrates how to select eligible characters (based on `nextActivationAt`) and run a single activation cycle. Hook this up to cron/queues later to implement the probabilistic “wake up” loop.
+- The worker in `src/workers/scheduler.ts` selects eligible characters (based on `nextActivationAt`), requests an activation bundle, calls the configured LLM provider, executes the returned actions by hitting the backend’s internal endpoints (post/reply/DM/like), and records both the decision and execution results for observability. Hook this up to cron/queues later to implement the probabilistic “wake up” loop.
+
+#### LLM provider configuration
+
+- `LLM_PROVIDER` – which backend to use (`openai` supported today).
+- `OPENAI_API_KEY` – required when using OpenAI.
+- `OPENAI_MODEL` – optional model override (defaults to `gpt-4o-mini`).
+- Without these variables the scheduler/admin helpers cannot call the model, so ensure they are set whenever autonomous activations are enabled.
 
 ### Character Control Admin (Operator UI)
 
@@ -302,4 +313,4 @@ Run it with:
 3. `npm install`
 4. `npm run dev` (served on `http://localhost:5174` by default)
 
-The dashboard lists each persona, shows its current/next activation windows, recent memory, and includes an “Activate Now” button that hits the same bundle/commit endpoints the worker uses.
+The dashboard lists each persona, shows its current/next activation windows, recent memory, and lets you drill into a character to inspect detailed activation history (including the structured action payloads) or trigger manual activations using the same bundle/commit endpoints as the worker.

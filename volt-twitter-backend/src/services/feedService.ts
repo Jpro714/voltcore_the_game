@@ -299,12 +299,69 @@ export const likePost = async (postId: string): Promise<PostResponse> => {
   return mapPost(updated);
 };
 
+export const createPostForUser = async (identifier: string, content: string): Promise<PostResponse> => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('Post content cannot be empty');
+  }
+
+  const user = await findUserOrThrow(identifier);
+  const newPost = await prisma.post.create({
+    data: {
+      authorId: user.id,
+      content: trimmed,
+    },
+    include: { author: true },
+  });
+
+  return mapPost(newPost);
+};
+
+export const createReplyForUser = async (identifier: string, postId: string, content: string): Promise<PostResponse> => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('Reply content cannot be empty');
+  }
+
+  const parent = await prisma.post.findUnique({ where: { id: postId } });
+  if (!parent) {
+    throw new Error('Parent post not found');
+  }
+
+  const user = await findUserOrThrow(identifier);
+
+  const [reply] = await prisma.$transaction([
+    prisma.post.create({
+      data: {
+        authorId: user.id,
+        content: trimmed,
+        parentPostId: postId,
+      },
+      include: { author: true },
+    }),
+    prisma.post.update({
+      where: { id: postId },
+      data: { replies: { increment: 1 } },
+    }),
+  ]);
+
+  return mapPost(reply);
+};
+
 const findUserByIdentifier = (identifier: string) =>
   prisma.user.findFirst({
     where: {
       OR: [{ handle: identifier }, { id: identifier }],
     },
   });
+
+const findUserOrThrow = async (identifier: string) => {
+  const user = await findUserByIdentifier(identifier);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user;
+};
 
 export const followUser = async (identifier: string): Promise<AuthorProfileResponse> => {
   const viewerProfile = await requireProfile();
@@ -355,14 +412,6 @@ export const unfollowUser = async (identifier: string): Promise<AuthorProfileRes
   });
 
   return getAuthorProfile(target.handle);
-};
-
-const findUserOrThrow = async (identifier: string) => {
-  const user = await findUserByIdentifier(identifier);
-  if (!user) {
-    throw new Error('User not found');
-  }
-  return user;
 };
 
 const includeUserCounts = {

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { fetchProfile, fetchTimeline } from './twitterClient.js';
 import { ActivationBundle, Persona } from '../types.js';
@@ -46,7 +47,7 @@ export const getActivationBundle = async (characterId: string): Promise<Activati
 
 export const recordActivation = async (
   characterId: string,
-  data: { state?: { currentSituation?: string; workingMemory?: string; nextActivationAt?: string | null }; actions?: unknown; summary?: string },
+  data: { state?: { currentSituation?: string | null; workingMemory?: string | null; nextActivationAt?: string | null }; actions?: unknown; summary?: string },
 ) => {
   const character = await prisma.character.findUnique({ where: { id: characterId }, include: { state: true } });
   if (!character) {
@@ -76,10 +77,13 @@ export const recordActivation = async (
       }
     }
 
+    const actionsPayload =
+      data.actions === undefined ? undefined : (data.actions as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput);
+
     await tx.characterActivation.create({
       data: {
         characterId: character.id,
-        actions: data.actions ?? null,
+        actions: actionsPayload,
         summary: data.summary,
       },
     });

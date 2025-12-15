@@ -41,3 +41,10 @@ export interface ActivationBundle {
   feed: unknown;
   profile: unknown;
 }
+
+export interface ActivationLog {
+  id: string;
+  occurredAt: string;
+  summary?: string | null;
+  actions?: unknown;
+}

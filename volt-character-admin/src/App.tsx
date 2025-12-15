@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchCharacters, requestActivationBundle, commitActivation } from './api/characters';
+import { fetchCharacters, requestActivationBundle, commitActivation, fetchActivationHistory } from './api/characters';
 import { CHARACTER_API_BASE_URL } from './api/client';
-import type { Character } from './types';
+import type { ActivationLog, Character } from './types';
 import './App.css';
 
 const DEFAULT_CADENCE_MINUTES = 10;
@@ -24,6 +24,10 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
   const [logMessages, setLogMessages] = useState<Record<string, string>>({});
+  const [historyByCharacter, setHistoryByCharacter] = useState<Record<string, ActivationLog[]>>({});
+  const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
+  const [expandedActivations, setExpandedActivations] = useState<Record<string, boolean>>({});
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
 
   const loadCharacters = useCallback(async () => {
     if (!CHARACTER_API_BASE_URL) {
@@ -46,6 +50,35 @@ function App() {
   useEffect(() => {
     loadCharacters();
   }, [loadCharacters]);
+
+  const loadHistory = useCallback(async (characterId: string) => {
+    if (!CHARACTER_API_BASE_URL) {
+      return;
+    }
+    setHistoryLoading((prev) => ({ ...prev, [characterId]: true }));
+    try {
+      const entries = await fetchActivationHistory(characterId, 5);
+      setHistoryByCharacter((prev) => ({ ...prev, [characterId]: entries }));
+    } catch (err) {
+      console.error(`Failed to load history for ${characterId}`, err);
+    } finally {
+      setHistoryLoading((prev) => ({ ...prev, [characterId]: false }));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (characters.length > 0 && !selectedCharacterId) {
+      setSelectedCharacterId(characters[0].id);
+    } else if (selectedCharacterId && !characters.some((character) => character.id === selectedCharacterId)) {
+      setSelectedCharacterId(characters[0]?.id ?? null);
+    }
+  }, [characters, selectedCharacterId]);
+
+  useEffect(() => {
+    if (selectedCharacterId) {
+      void loadHistory(selectedCharacterId);
+    }
+  }, [selectedCharacterId, loadHistory]);
 
   const handleActivate = useCallback(
     async (character: Character) => {
@@ -72,6 +105,7 @@ function App() {
         }));
 
         await loadCharacters();
+        await loadHistory(character.id);
       } catch (err) {
         setError((err as Error).message || 'Failed to trigger activation');
       } finally {
@@ -92,6 +126,117 @@ function App() {
     return sections.join(' • ') || '—';
   }, []);
 
+  const selectedCharacter = selectedCharacterId ? characters.find((character) => character.id === selectedCharacterId) : null;
+  const selectedHistory = selectedCharacterId ? historyByCharacter[selectedCharacterId] ?? [] : [];
+
+  const toggleActivation = useCallback((activationId: string) => {
+    setExpandedActivations((prev) => ({ ...prev, [activationId]: !prev[activationId] }));
+  }, []);
+
+  const renderDetail = useCallback(() => {
+    if (!selectedCharacter) {
+      return <div className="empty-state">Select a character to view details.</div>;
+    }
+
+    return (
+      <div className="detail-panel">
+        <header className="detail-header">
+          <div>
+            <h2>{selectedCharacter.displayName}</h2>
+            <p>@{selectedCharacter.twitterHandle}</p>
+          </div>
+          <span className={`status-pill ${selectedCharacter.isActive ? 'status-pill--active' : ''}`}>
+            {selectedCharacter.isActive ? 'Active' : 'Paused'}
+          </span>
+        </header>
+
+        <section className="detail-section">
+          <h3>Persona</h3>
+          <p>{personaSummary(selectedCharacter)}</p>
+          {selectedCharacter.persona?.interests && selectedCharacter.persona.interests.length > 0 && (
+            <p className="muted">Interests: {selectedCharacter.persona.interests.join(', ')}</p>
+          )}
+        </section>
+
+        <section className="detail-grid">
+          <div>
+            <h4>Current Situation</h4>
+            <p>{selectedCharacter.state?.currentSituation || '—'}</p>
+          </div>
+          <div>
+            <h4>Working Memory</h4>
+            <p>{selectedCharacter.state?.workingMemory || '—'}</p>
+          </div>
+        </section>
+
+        <section className="detail-grid">
+          <div>
+            <h4>Last Activation</h4>
+            <p>{formatTimestamp(selectedCharacter.state?.lastActivationAt)}</p>
+          </div>
+          <div>
+            <h4>Next Activation</h4>
+            <p>{formatTimestamp(selectedCharacter.state?.nextActivationAt)}</p>
+          </div>
+        </section>
+
+        {logMessages[selectedCharacter.id] && <div className="activation-log">{logMessages[selectedCharacter.id]}</div>}
+
+        <section className="detail-section">
+          <div className="history-header">
+            <span>Recent Activations</span>
+            <button type="button" onClick={() => loadHistory(selectedCharacter.id)} disabled={historyLoading[selectedCharacter.id]}>
+              {historyLoading[selectedCharacter.id] ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+
+          {historyLoading[selectedCharacter.id] && selectedHistory.length === 0 ? (
+            <div className="history-empty">Loading history…</div>
+          ) : selectedHistory.length > 0 ? (
+            <ul className="history-list history-list--detail">
+              {selectedHistory.map((entry) => (
+                <li key={entry.id} onClick={() => toggleActivation(entry.id)}>
+                  <button type="button" className="history-entry">
+                    <div>
+                      <div className="history-summary">{entry.summary ?? 'No summary provided.'}</div>
+                      <div className="history-meta">
+                        <span>{new Date(entry.occurredAt).toLocaleString()}</span>
+                        <span>{Array.isArray(entry.actions) ? `${entry.actions.length} actions` : '0 actions'}</span>
+                      </div>
+                    </div>
+                    <span>{expandedActivations[entry.id] ? 'Hide' : 'View'}</span>
+                  </button>
+                  {expandedActivations[entry.id] && (
+                    <pre className="history-actions">{JSON.stringify(entry.actions, null, 2)}</pre>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="history-empty">No activations yet.</div>
+          )}
+        </section>
+
+        <footer className="detail-footer">
+          <button type="button" onClick={() => handleActivate(selectedCharacter)} disabled={activating === selectedCharacter.id}>
+            {activating === selectedCharacter.id ? 'Activating…' : 'Activate Now'}
+          </button>
+        </footer>
+      </div>
+    );
+  }, [
+    activating,
+    expandedActivations,
+    handleActivate,
+    historyLoading,
+    loadHistory,
+    logMessages,
+    personaSummary,
+    selectedCharacter,
+    selectedHistory,
+    toggleActivation,
+  ]);
+
   const content = useMemo(() => {
     if (!CHARACTER_API_BASE_URL) {
       return (
@@ -111,63 +256,31 @@ function App() {
     }
 
     return (
-      <div className="card-grid">
-        {characters.map((character) => (
-          <article key={character.id} className="character-card">
-            <header className="character-card__header">
+      <div className="control-layout">
+        <aside className="character-list">
+          {characters.map((character) => (
+            <button
+              key={character.id}
+              className={
+                character.id === selectedCharacterId ? 'character-list__item character-list__item--active' : 'character-list__item'
+              }
+              onClick={() => setSelectedCharacterId(character.id)}
+            >
               <div>
-                <div className="character-card__name">{character.displayName}</div>
-                <div className="character-card__handle">@{character.twitterHandle}</div>
+                <div className="character-list__name">{character.displayName}</div>
+                <div className="character-list__handle">@{character.twitterHandle}</div>
               </div>
-              <span className={`status-pill ${character.isActive ? 'status-pill--active' : ''}`}>
-                {character.isActive ? 'Active' : 'Paused'}
-              </span>
-            </header>
-
-            <dl>
-              <div>
-                <dt>Persona</dt>
-                <dd>{personaSummary(character)}</dd>
-                {character.persona?.interests && character.persona.interests.length > 0 && (
-                  <dd className="muted">Interests: {character.persona.interests.join(', ')}</dd>
-                )}
+              <div className="character-list__meta">
+                <span>{character.isActive ? 'Active' : 'Paused'}</span>
+                <span>{formatTimestamp(character.state?.nextActivationAt)}</span>
               </div>
-              <div>
-                <dt>Current Situation</dt>
-                <dd>{character.state?.currentSituation || '—'}</dd>
-              </div>
-              <div>
-                <dt>Working Memory</dt>
-                <dd>{character.state?.workingMemory || '—'}</dd>
-              </div>
-              <div className="timeline">
-                <div>
-                  <dt>Last Activation</dt>
-                  <dd>{formatTimestamp(character.state?.lastActivationAt)}</dd>
-                </div>
-                <div>
-                  <dt>Next Activation</dt>
-                  <dd>{formatTimestamp(character.state?.nextActivationAt)}</dd>
-                </div>
-              </div>
-            </dl>
-
-            {logMessages[character.id] && <div className="activation-log">{logMessages[character.id]}</div>}
-
-            <footer className="character-card__actions">
-              <button
-                type="button"
-                onClick={() => handleActivate(character)}
-                disabled={activating === character.id}
-              >
-                {activating === character.id ? 'Activating…' : 'Activate Now'}
-              </button>
-            </footer>
-          </article>
-        ))}
+            </button>
+          ))}
+        </aside>
+        <section className="character-detail">{renderDetail()}</section>
       </div>
     );
-  }, [CHARACTER_API_BASE_URL, activating, characters, handleActivate, loading, logMessages, personaSummary]);
+  }, [CHARACTER_API_BASE_URL, characters, loading, renderDetail, selectedCharacterId]);
 
   return (
     <div className="app-shell">
