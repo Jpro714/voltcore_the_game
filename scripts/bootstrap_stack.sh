@@ -5,6 +5,7 @@ SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 REPO_ROOT="$SCRIPT_DIR/.."
 BACKEND_DIR="$REPO_ROOT/volt-twitter-backend"
 CHAR_DIR="$REPO_ROOT/volt-character-service"
+AMM_DIR="$REPO_ROOT/volt-amm-service"
 
 require_env_file() {
   local dir=$1
@@ -18,6 +19,9 @@ require_env_file() {
 require_env_file "$BACKEND_DIR"
 if [ -d "$CHAR_DIR" ]; then
   require_env_file "$CHAR_DIR"
+fi
+if [ -d "$AMM_DIR" ]; then
+  require_env_file "$AMM_DIR"
 fi
 
 echo "[bootstrap] Ensuring Postgres database exists..."
@@ -36,6 +40,16 @@ else
   echo "[bootstrap] Character service directory not found; skipping character migrations."
 fi
 
+if [ -d "$AMM_DIR" ]; then
+  echo "[bootstrap] Resetting AMM schema..."
+  (cd "$AMM_DIR" && npx prisma migrate reset --schema prisma/schema.prisma --force --skip-generate --skip-seed >/dev/null)
+
+  echo "[bootstrap] Applying AMM service migrations..."
+  (cd "$AMM_DIR" && npx prisma migrate deploy --schema prisma/schema.prisma)
+else
+  echo "[bootstrap] AMM service directory not found; skipping AMM migrations."
+fi
+
 echo "[bootstrap] Seeding backend data..."
 (cd "$BACKEND_DIR" && npm run seed)
 
@@ -45,6 +59,11 @@ if [ -d "$CHAR_DIR" ]; then
 
   echo "[bootstrap] Priming character activation windows..."
   (cd "$CHAR_DIR" && npm run prime:activations)
+fi
+
+if [ -d "$AMM_DIR" ]; then
+  echo "[bootstrap] Seeding AMM data..."
+  (cd "$AMM_DIR" && npm run seed --silent)
 fi
 
 echo "[bootstrap] Database ready."

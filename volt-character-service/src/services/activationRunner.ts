@@ -1,8 +1,9 @@
 import prisma from '../lib/prisma.js';
-import { getActivationBundle, recordActivation } from './activationService.js';
+import { recordActivation } from './activationService.js';
 import { getLLMProvider } from './llmProvider.js';
 import { executeActions } from './actionExecutor.js';
 import { PingContext } from '../types.js';
+import { createActivationContext } from './contextBuilder.js';
 
 const DEFAULT_CADENCE_MIN = Number(process.env.CHARACTER_MIN_CADENCE ?? 5);
 const DEFAULT_CADENCE_MAX = Number(process.env.CHARACTER_MAX_CADENCE ?? 15);
@@ -25,18 +26,7 @@ export const runCharacterActivation = async (characterId: string, options: Activ
     throw new Error('Character not found');
   }
 
-  let bundle = await getActivationBundle(characterId);
-  const pingPayload = options.ping?.payload ?? {};
-  const threadHistoryRaw =
-    pingPayload && typeof pingPayload === 'object' ? (pingPayload as Record<string, unknown>)['threadHistory'] : undefined;
-  const threadHistory = Array.isArray(threadHistoryRaw) ? threadHistoryRaw : undefined;
-  if (options.ping) {
-    bundle = {
-      ...bundle,
-      feed: threadHistory ?? [],
-      ping: options.ping,
-    };
-  }
+  const bundle = await createActivationContext(characterId, options.ping);
 
   const decision = await provider.generateActivation(bundle);
   const actionResults = await executeActions(character.twitterHandle, decision.actions ?? []);

@@ -1,0 +1,41 @@
+.TradeHistory {
+  background: rgba(9, 12, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.TradeHistory table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.TradeHistory th,
+.TradeHistory td {
+  text-align: left;
+  padding: 8px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.TradeHistory th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: #7d8ab3;
+}
+
+.TradeHistory td.buy {
+  color: #45d8a2;
+}
+
+.TradeHistory td.sell {
+  color: #ff6f91;
+}
+
+.TradeHistory-empty {
+  text-align: center;
+  color: #8ea0d1;
+  padding: 24px 0;
+}

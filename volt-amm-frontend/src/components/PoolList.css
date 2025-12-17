@@ -1,0 +1,83 @@
+.PoolList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.PoolList-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.PoolList-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.PoolList-header span {
+  font-size: 0.85rem;
+  color: #a3b4ff;
+}
+
+.PoolList-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PoolList-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.PoolList-item:hover {
+  border-color: rgba(130, 247, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.PoolList-item--active {
+  border-color: rgba(130, 247, 255, 0.8);
+  background: rgba(130, 247, 255, 0.12);
+}
+
+.PoolList-symbol {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.PoolList-name {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: #a3b4ff;
+}
+
+.PoolList-stats {
+  text-align: right;
+}
+
+.PoolList-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #9eb5ff;
+}
+
+.PoolList-empty {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #a3b4ff;
+}

@@ -318,3 +318,35 @@ Run it with:
 4. `npm run dev` (served on `http://localhost:5174` by default)
 
 The dashboard lists each persona, shows its current/next activation windows, recent memory, and lets you drill into a character to inspect detailed activation history (including the structured action payloads). You can trigger manual activations (which now run the full LLM + execution loop) and tune each character’s randomized activation window directly from the UI.
+
+### Internal AMM Service (Off-Chain Markets)
+
+The `volt-amm-service` directory contains the new AMM backend that keeps track of venture tokens, CRED liquidity, and wallet balances.
+
+- `npm install` then `cp .env.example .env` (defaults to port `4200`). Point `DATABASE_URL` to the shared Postgres instance (you can reuse the twitter DB by adding `?schema=amm`).
+- Run `npm run prisma:migrate -- --name init` the first time to provision tables for wallets, venture tokens, liquidity pools, trades, and LP events. Re-run when the schema changes.
+- `npm run dev` starts an Express server with `/health` plus JSON APIs under `/api`.
+- Wallets can be linked to existing Volt Twitter personas through `twitterUserId`, and the default seed script auto-provisions wallets for every seeded user so characters, posts, and balances stay in sync.
+- Running `scripts/bootstrap_stack.sh` now resets the AMM schema (via `prisma migrate reset`) before applying migrations + seeds so every local bootstrap starts from a clean ledger.
+
+Core endpoints:
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /api/wallets` | List wallets, CRED balances, venture token holdings, and LP shares. |
+| `POST /api/wallets` | Provision a wallet with optional handle/type + starting balance. |
+| `POST /api/wallets/:id/fund` | Top up a wallet’s CRED balance for testing or scripted events. |
+| `GET /api/pools` | List venture pools with reserves, spot price, fee bps, and token metadata. |
+| `POST /api/pools` | Launch a token + seed initial liquidity with creator wallet + supply. |
+| `POST /api/pools/:id/buy` / `sell` | Execute CRED ↔ token swaps with fee + price impact reporting. |
+| `POST /api/pools/:id/liquidity/add` / `remove` | Manage LP positions and emit liquidity events for narrative hooks. |
+
+All numeric payloads accept strings or numbers and the service returns stringified decimals to prevent float drift. This keeps the AMM legible for AI reasoning while remaining simple to integrate with future frontend or narrative systems.
+
+### AMM Operations Console (Frontend)
+
+`volt-amm-frontend` is a Vite + React dashboard that sits alongside the Twitter and character admin clients. It consumes the AMM API so operators can inspect pools, switch between wallets, and trigger trades or liquidity actions without touching curl.
+
+- `npm install` then `npm run dev` (defaults to `http://localhost:4300`). Copy `.env.example` → `.env` if the AMM backend is running on a non-default origin and set `VITE_AMM_API_URL`.
+- Panels: pool browser, wallet selector, trade panel (buy/sell CRED ↔ token), and liquidity panel (add/remove LP shares). Every component keeps its own `.css` module so we avoid inline styles.
+- On each successful action the client refreshes pool + wallet state from `volt-amm-service`, making it easy to test end-to-end loops alongside the Twitter/character tools.

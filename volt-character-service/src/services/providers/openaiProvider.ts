@@ -86,7 +86,7 @@ export class OpenAIProvider implements LLMProvider {
 - type "mention": another user tagged you publicly; consider replying on that thread.
 - type "reply": someone replied to one of your posts; evaluate if their message merits a response, do not fall into endless back-and-forth.
 ${describePingGuidance(bundle.ping)}
-When a ping exists you may ignore the general feed (the threadHistory will be provided when relevant), and it is acceptable to emit a "noop" action if silence is best. Respond ONLY with JSON matching the provided schema.`,
+When a ping exists rely on the provided context summary instead of the raw feed, and it is acceptable to emit a "noop" action if silence is best. Respond ONLY with JSON matching the provided schema.`,
         },
         {
           role: 'user',
@@ -94,9 +94,8 @@ When a ping exists you may ignore the general feed (the threadHistory will be pr
             handle: bundle.handle,
             persona: bundle.persona,
             state: bundle.state,
-            feed: bundle.feed,
             profile: bundle.profile,
-            ping: bundle.ping ?? null,
+            contextSummary: bundle.contextSummary ?? null,
           }),
         },
       ],

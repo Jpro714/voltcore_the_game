@@ -1,0 +1,21 @@
+:root {
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e1e8ff;
+  background-color: #05060b;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #111629, #05060b 60%);
+}
+
+button {
+  font-family: inherit;
+}

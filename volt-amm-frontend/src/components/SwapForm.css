@@ -1,0 +1,81 @@
+.SwapForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.SwapForm form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.SwapForm-direction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.SwapForm-direction label {
+  font-size: 0.9rem;
+  color: #f5f7ff;
+}
+
+.SwapForm-direction button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #f5f7ff;
+  cursor: pointer;
+}
+
+.SwapForm input {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(9, 12, 24, 0.9);
+  color: #f5f7ff;
+}
+
+.SwapForm-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #9eb5ff;
+}
+
+.SwapForm-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.SwapForm-result strong {
+  font-size: 1.2rem;
+}
+
+.SwapForm-result span {
+  color: #9eb5ff;
+  font-size: 0.9rem;
+}
+
+.SwapForm button[type='submit'] {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(120deg, #43f0ff, #8e7bff);
+  color: #040511;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.SwapForm button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

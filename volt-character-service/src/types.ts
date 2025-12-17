@@ -22,6 +22,7 @@ export interface ActivationBundle {
   feed: unknown;
   profile: unknown;
   ping?: PingContext;
+  contextSummary?: string;
 }
 
 export type CharacterActionType = 'post' | 'reply' | 'dm' | 'like' | 'noop';

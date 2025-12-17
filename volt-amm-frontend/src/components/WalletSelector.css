@@ -1,0 +1,23 @@
+.WalletSelector {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.WalletSelector label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #82f7ff;
+}
+
+.WalletSelector select {
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(130, 247, 255, 0.4);
+  background: rgba(9, 12, 24, 0.9);
+  color: #f5f7ff;
+  font-size: 0.95rem;
+}

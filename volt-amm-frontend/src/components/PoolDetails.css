@@ -1,0 +1,29 @@
+.PoolDetails-description {
+  margin: 0 0 16px;
+  color: #adbcff;
+}
+
+.PoolDetails-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.PoolDetails-grid div {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.PoolDetails-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #9eb5ff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.PoolDetails-grid strong {
+  font-size: 1.1rem;
+}

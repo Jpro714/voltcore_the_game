@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WalletType {
+  PLAYER
+  CHARACTER
+  SYSTEM
+  STORY
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
+
+enum LiquidityEventType {
+  ADD
+  REMOVE
+}
+
+model Wallet {
+  id                 String              @id @default(cuid())
+  displayName        String
+  handle             String?             @unique
+  twitterUserId      String?             @unique
+  type               WalletType          @default(PLAYER)
+  credBalance        Decimal             @db.Decimal(30, 6) @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  createdTokens      VentureToken[]      @relation("CreatorWallet")
+  tokenHoldings      TokenHolding[]
+  trades             Trade[]
+  liquidityPositions LiquidityPosition[]
+  liquidityEvents    LiquidityEvent[]
+}
+
+model VentureToken {
+  id                String           @id @default(cuid())
+  symbol            String           @unique
+  name              String
+  description       String?
+  totalSupply       Decimal          @db.Decimal(30, 6) @default(0)
+  circulatingSupply Decimal          @db.Decimal(30, 6) @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  creatorWalletId   String?
+  creatorWallet     Wallet?          @relation("CreatorWallet", fields: [creatorWalletId], references: [id])
+  pool              LiquidityPool?
+  holdings          TokenHolding[]
+}
+
+model LiquidityPool {
+  id             String             @id @default(cuid())
+  ventureTokenId String             @unique
+  ventureToken   VentureToken       @relation(fields: [ventureTokenId], references: [id])
+  credReserve    Decimal            @db.Decimal(30, 6) @default(0)
+  tokenReserve   Decimal            @db.Decimal(30, 6) @default(0)
+  totalShares    Decimal            @db.Decimal(30, 6) @default(0)
+  feeBasisPoints Int                @default(30)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  positions      LiquidityPosition[]
+  trades         Trade[]
+  liquidity      LiquidityEvent[]
+}
+
+model LiquidityPosition {
+  id        String         @id @default(cuid())
+  poolId    String
+  walletId  String
+  shares    Decimal        @db.Decimal(30, 6) @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  pool      LiquidityPool  @relation(fields: [poolId], references: [id])
+  wallet    Wallet         @relation(fields: [walletId], references: [id])
+
+  @@unique([poolId, walletId])
+}
+
+model Trade {
+  id         String        @id @default(cuid())
+  poolId     String
+  walletId   String
+  type       TradeType
+  credDelta  Decimal       @db.Decimal(30, 6)
+  tokenDelta Decimal       @db.Decimal(30, 6)
+  price      Decimal       @db.Decimal(30, 6)
+  feePaid    Decimal       @db.Decimal(30, 6)
+  createdAt  DateTime      @default(now())
+  pool       LiquidityPool @relation(fields: [poolId], references: [id])
+  wallet     Wallet        @relation(fields: [walletId], references: [id])
+}
+
+model LiquidityEvent {
+  id         String              @id @default(cuid())
+  poolId     String
+  walletId   String
+  type       LiquidityEventType
+  shares     Decimal             @db.Decimal(30, 6)
+  credDelta  Decimal             @db.Decimal(30, 6)
+  tokenDelta Decimal             @db.Decimal(30, 6)
+  createdAt  DateTime            @default(now())
+  pool       LiquidityPool       @relation(fields: [poolId], references: [id])
+  wallet     Wallet              @relation(fields: [walletId], references: [id])
+}
+
+model TokenHolding {
+  id        String        @id @default(cuid())
+  walletId  String
+  tokenId   String
+  amount    Decimal       @db.Decimal(30, 6) @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  wallet    Wallet        @relation(fields: [walletId], references: [id])
+  token     VentureToken  @relation(fields: [tokenId], references: [id])
+
+  @@unique([walletId, tokenId])
+}
